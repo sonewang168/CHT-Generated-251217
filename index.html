@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>繁中生圖工坊</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        :root{--bg:#000;--card:rgba(28,28,30,.9);--blue:#0a84ff;--green:#30d158;--orange:#ff9f0a;--pink:#ff375f;--purple:#bf5af2;--teal:#64d2ff;--cyan:#00ffff;--gray:#8e8e93;--gray3:#48484a;--gray4:#3a3a3c;--gray5:#2c2c2e;--text:#fff;--text2:rgba(255,255,255,.6);--safe-top:env(safe-area-inset-top,47px);--safe-bottom:env(safe-area-inset-bottom,34px)}
+        /* 開機動畫 */
+        .splash{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s,visibility .6s}
+        .splash.hide{opacity:0;visibility:hidden}
+        .splash-logo{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center}
+        .splash-ring{position:absolute;inset:0;border-radius:50%;border:2px solid transparent;border-top-color:var(--cyan);animation:spin 1.2s linear infinite}
+        .splash-ring:nth-child(2){inset:8px;border-top-color:var(--teal);animation-duration:1.5s;animation-direction:reverse}
+        .splash-ring:nth-child(3){inset:16px;border-top-color:var(--purple);animation-duration:1.8s}
+        .splash-glow{position:absolute;inset:20px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,255,.15) 0%,transparent 70%);animation:glowPulse 2s ease-in-out infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes glowPulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+        .splash-text{font-size:48px;font-weight:900;color:var(--cyan);text-shadow:0 0 20px var(--cyan),0 0 40px var(--teal),0 0 60px var(--purple);animation:textGlow 1.5s ease-in-out infinite alternate}
+        @keyframes textGlow{from{text-shadow:0 0 20px var(--cyan),0 0 40px var(--teal),0 0 60px var(--purple);filter:brightness(1)}to{text-shadow:0 0 30px var(--cyan),0 0 60px var(--teal),0 0 90px var(--purple);filter:brightness(1.2)}}
+        .splash-title{margin-top:24px;font-size:18px;font-weight:600;color:var(--text);opacity:0;animation:fadeUp .8s .5s forwards}
+        .splash-sub{margin-top:8px;font-size:12px;color:var(--text2);opacity:0;animation:fadeUp .8s .8s forwards}
+        @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+        .splash-title,.splash-sub{transform:translateY(10px)}
+        .splash-bar{position:absolute;bottom:80px;width:160px;height:3px;background:var(--gray4);border-radius:2px;overflow:hidden}
+        .splash-progress{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--teal),var(--purple));border-radius:2px;animation:loading 2s ease-out forwards}
+        @keyframes loading{to{width:100%}}
+        .splash-ver{position:absolute;bottom:40px;font-size:10px;color:var(--gray)}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:'Noto Sans TC',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .status-bar{position:fixed;top:0;left:0;right:0;height:var(--safe-top);background:linear-gradient(rgba(0,0,0,.95),rgba(0,0,0,.8));backdrop-filter:blur(20px);display:flex;justify-content:space-between;align-items:flex-end;padding:0 28px 10px;font-size:15px;font-weight:600;z-index:1000}
+        .island{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:126px;height:37px;background:#000;border-radius:22px;z-index:1001;transition:all .5s;overflow:hidden}
+        .island.active{width:calc(100% - 40px);height:100px;border-radius:28px;background:linear-gradient(135deg,#1c1c1e,#2c2c2e)}
+        .island-content{display:none;width:100%;padding:12px 16px;flex-direction:column;gap:8px}
+        .island.active .island-content{display:flex}
+        .island-top{display:flex;align-items:center;gap:12px}
+        .island-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--pink));display:flex;align-items:center;justify-content:center;font-size:18px;animation:pulse 1.5s infinite}
+        .island-text{flex:1}.island-text h4{font-size:13px;font-weight:600}.island-text p{font-size:11px;color:var(--text2)}
+        .island-progress{width:100%;height:6px;background:#3a3a3c;border-radius:3px;overflow:hidden}
+        .island-bar{height:100%;width:0%;background:linear-gradient(90deg,#00d4ff,#7b2dff,#ff2d95);border-radius:3px;transition:width .3s;animation:progressGlow 1.5s infinite}
+        @keyframes progressGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(.95);opacity:.8}}
+        .island-text{flex:1}.island-text h4{font-size:13px;font-weight:600}.island-text p{font-size:11px;color:var(--text2)}
+        .app{padding-top:calc(var(--safe-top) + 50px);padding-bottom:calc(var(--safe-bottom) + 75px)}
+        .header{padding:8px 20px 14px;text-align:center}
+        .header h1{font-size:24px;font-weight:700;background:linear-gradient(135deg,var(--teal),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .header p{font-size:12px;color:var(--text2);margin-top:4px}
+        .card{background:var(--card);backdrop-filter:blur(20px);border-radius:16px;margin:0 16px 12px;overflow:hidden}
+        .card-head{padding:12px 16px 10px;border-bottom:1px solid var(--gray4);display:flex;justify-content:space-between;align-items:center}
+        .card-head h3{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+        .card-body{padding:12px 16px}
+        .input{width:100%;padding:12px 14px;background:var(--gray5);border:none;border-radius:12px;color:var(--text);font-family:inherit;font-size:15px;outline:none}
+        .input:focus{box-shadow:0 0 0 2px var(--blue)}.input::placeholder{color:var(--gray)}
+        textarea.input{min-height:70px;resize:none;line-height:1.5}
+        .models{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+        .model{background:var(--gray5);border:2px solid transparent;border-radius:14px;padding:14px;cursor:pointer;position:relative}
+        .model.on{border-color:var(--purple);background:rgba(191,90,242,.15)}
+        .model-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+        .model-name{font-size:14px;font-weight:600}.model-icon{font-size:20px}
+        .model-desc{font-size:11px;color:var(--text2);line-height:1.3}
+        .model-tag{position:absolute;top:8px;right:8px;font-size:9px;padding:3px 6px;border-radius:5px;background:var(--green);color:#000;font-weight:600}
+        .sizes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+        .size{padding:10px 14px;background:var(--gray5);border:2px solid transparent;border-radius:10px;color:var(--text2);font-family:inherit;font-size:12px;cursor:pointer}
+        .size.on{border-color:var(--blue);color:var(--blue);background:rgba(10,132,255,.15)}
+        .custom-row{display:flex;gap:8px;align-items:center}
+        .custom-input{width:70px;padding:10px;background:var(--gray5);border:none;border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;text-align:center}
+        .prompt-toolbar{display:flex;gap:8px;margin-bottom:10px}
+        .tool-btn{padding:8px 12px;background:var(--gray5);border:none;border-radius:10px;color:var(--text2);font-family:inherit;font-size:12px;cursor:pointer}
+        .tool-btn:hover{background:var(--gray4)}
+        .tool-btn.danger{color:var(--pink)}
+        .upload-preview{margin-top:10px;display:none;position:relative}
+        .upload-preview.show{display:block}
+        .upload-img{width:100%;max-height:140px;object-fit:contain;border-radius:10px;background:var(--gray5)}
+        .upload-remove{position:absolute;top:8px;right:8px;width:26px;height:26px;background:var(--pink);border:none;border-radius:50%;color:#fff;font-size:16px;cursor:pointer}
+        .ai-result{margin-top:10px;padding:12px;background:linear-gradient(135deg,rgba(100,210,255,.1),rgba(191,90,242,.1));border-radius:10px;display:none}
+        .ai-result.show{display:block}
+        .ai-result-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .ai-result-title{font-size:12px;font-weight:600;color:var(--teal)}
+        .ai-result-use{padding:6px 10px;background:var(--green);border:none;border-radius:8px;color:#000;font-size:11px;font-weight:600;cursor:pointer}
+        .ai-result-text{font-size:13px;color:var(--text);line-height:1.5}
+        .add-btn{background:var(--purple);border:none;border-radius:8px;color:#fff;padding:6px 12px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+        .texts{display:flex;flex-direction:column;gap:10px}
+        .text-block{background:var(--gray5);border-radius:12px;padding:12px;border:2px solid transparent}
+        .text-block.on{border-color:var(--purple)}
+        .text-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .text-title{font-size:12px;font-weight:600;color:var(--teal)}
+        .del-btn{background:var(--pink);border:none;border-radius:50%;width:22px;height:22px;color:#fff;font-size:14px;cursor:pointer}
+        .text-input{width:100%;padding:10px 12px;background:var(--gray4);border:none;border-radius:8px;color:var(--text);font-family:inherit;font-size:14px;margin-bottom:8px}
+        .text-opts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+        .mini-color{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+        .mini-color.on{border-color:#fff;transform:scale(1.1)}
+        .mini-font{padding:4px 8px;background:var(--gray3);border:2px solid transparent;border-radius:6px;color:var(--text2);font-size:10px;cursor:pointer}
+        .mini-font.on{border-color:var(--teal);color:var(--teal)}
+        .mini-slider{width:70px;height:4px;-webkit-appearance:none;background:var(--gray3);border-radius:2px}
+        .mini-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--blue)}
+        .tip{margin-top:10px;padding:8px;background:linear-gradient(135deg,rgba(100,210,255,.1),rgba(191,90,242,.1));border-radius:8px;font-size:11px;color:var(--text2);text-align:center}
+        .empty{text-align:center;padding:16px;color:var(--gray);font-size:12px}
+        .qr-section{margin-top:12px;padding:12px;background:var(--gray5);border-radius:12px}
+        .qr-toggle{display:flex;align-items:center;gap:12px}
+        .qr-toggle label{font-size:13px;color:var(--text2)}
+        .qr-switch{position:relative;width:50px;height:28px;background:var(--gray3);border-radius:14px;cursor:pointer}
+        .qr-switch.on{background:var(--green)}
+        .qr-switch::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:all .3s}
+        .qr-switch.on::after{left:25px}
+        .qr-options{display:none;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px}
+        .qr-options.show{display:flex}
+        .qr-pos{display:flex;gap:6px}
+        .qr-pos-btn{width:36px;height:36px;background:var(--gray4);border:2px solid transparent;border-radius:8px;color:var(--text2);font-size:14px;cursor:pointer}
+        .qr-pos-btn.on{border-color:var(--teal);color:var(--teal)}
+        .qr-preview{margin-top:12px;text-align:center;display:none}
+        .qr-preview.show{display:block}
+        .qr-preview canvas{border-radius:10px;background:#fff;padding:8px}
+        .qr-url{margin-top:10px;padding:10px;background:var(--gray4);border-radius:8px;font-size:11px;color:var(--teal);word-break:break-all}
+        .preview-wrap{position:relative}
+        .preview{width:100%;background:var(--gray5);border-radius:14px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;min-height:160px}
+        .preview-ph{text-align:center;color:var(--gray);font-size:14px}
+        .preview-img{width:100%;height:100%;object-fit:contain;display:none}
+        .preview-text{position:absolute;padding:6px 10px;cursor:move;user-select:none;text-shadow:2px 2px 10px rgba(0,0,0,.9);border-radius:4px;white-space:nowrap}
+        .preview-text:hover{box-shadow:0 0 0 2px rgba(255,255,255,.5)}
+        .preview-text.drag{box-shadow:0 0 0 3px var(--purple);z-index:100}
+        .preview-text.sel{box-shadow:0 0 0 2px var(--teal)}
+        .size-badge{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);padding:4px 10px;border-radius:8px;font-size:11px;color:var(--text2)}
+        .gen-btn{width:calc(100% - 32px);margin:14px 16px;padding:16px;background:linear-gradient(135deg,var(--purple),var(--pink));border:none;border-radius:14px;color:#fff;font-family:inherit;font-size:17px;font-weight:600;cursor:pointer}
+        .gen-btn:disabled{opacity:.5;cursor:not-allowed}
+        .test-btn{width:100%;margin-top:12px;padding:12px;background:linear-gradient(135deg,#06c755,#04a648);border:none;border-radius:10px;color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+        .test-btn:disabled{opacity:.5;cursor:not-allowed}
+        .actions{display:none;gap:8px;margin:0 16px 14px;flex-wrap:wrap}
+        .actions.show{display:flex}
+        .act{flex:1;min-width:calc(50% - 4px);padding:12px 8px;background:var(--gray5);border:none;border-radius:10px;color:var(--text);font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+        .act-icon{font-size:18px}
+        .act.line{color:#06c755}.act.imgbb{color:var(--orange)}.act.dl{color:var(--green)}.act.qr{color:var(--teal)}
+        .nav{position:fixed;bottom:0;left:0;right:0;height:calc(65px + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:rgba(28,28,30,.9);backdrop-filter:blur(20px);border-top:1px solid var(--gray4);display:flex;justify-content:space-around;align-items:flex-start;padding-top:8px;z-index:100}
+        .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:var(--gray);font-family:inherit;font-size:10px;font-weight:500;cursor:pointer;padding:6px 16px}
+        .nav-item.on{color:var(--blue)}
+        .nav-item svg{width:22px;height:22px}
+        .toast{position:fixed;top:calc(var(--safe-top) + 55px);left:50%;transform:translateX(-50%) translateY(-20px);background:var(--gray4);padding:12px 20px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;visibility:hidden;transition:all .3s;z-index:2000}
+        .toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+        .toast.ok{background:var(--green);color:#000}.toast.err{background:var(--pink)}
+        .page{display:none}.page.on{display:block}
+        .set-item{padding:10px 0;border-bottom:1px solid var(--gray4)}
+        .set-label{font-size:12px;color:var(--text2);margin-bottom:6px}
+        .set-label .req{color:var(--pink);font-size:10px}
+        .api-hint{font-size:10px;color:var(--gray);margin-top:4px}
+        .api-hint a{color:var(--blue);text-decoration:none}
+        .hidden-input{display:none}
+    </style>
+</head>
+<body>
+    <!-- 開機動畫 -->
+    <div class="splash" id="splash">
+        <div class="splash-logo">
+            <div class="splash-ring"></div>
+            <div class="splash-ring"></div>
+            <div class="splash-ring"></div>
+            <div class="splash-glow"></div>
+            <span class="splash-text">繁</span>
+        </div>
+        <div class="splash-title">繁中生圖工坊</div>
+        <div class="splash-sub">AI 圖像生成 · 繁體中文優化</div>
+        <div class="splash-bar"><div class="splash-progress"></div></div>
+        <div class="splash-ver">v1.0 by Sone Wang</div>
+    </div>
+
+    <div class="status-bar"><span id="time">9:41</span><div>5G 📶 🔋</div></div>
+    <div class="island" id="island"><div class="island-content"><div class="island-top"><div class="island-icon">🎨</div><div class="island-text"><h4 id="iTitle">生成中...</h4><p id="iStatus">準備中</p></div></div><div class="island-progress"><div class="island-bar" id="iBar"></div></div></div></div>
+    <div class="toast" id="toast"></div>
+    <input type="file" class="hidden-input" id="fileInput" accept="image/*,.txt,.md">
+    <input type="file" class="hidden-input" id="imgInput" accept="image/*">
+    
+    <div class="app">
+        <div class="page on" id="createPage">
+            <div class="header"><h1>🎨 繁中生圖工坊</h1><p>專為繁體中文字優化的 AI 圖像生成</p></div>
+            
+            <div class="card"><div class="card-head"><h3>🤖 AI 模型（擅長中文字）</h3></div><div class="card-body">
+                <div class="models" id="modelGrid"></div>
+            </div></div>
+            
+            <div class="card"><div class="card-head"><h3>📐 尺寸</h3></div><div class="card-body">
+                <div class="sizes" id="sizeGrid"></div>
+                <div class="custom-row">
+                    <input type="number" class="custom-input" id="cw" value="1024">
+                    <span style="color:var(--gray)">×</span>
+                    <input type="number" class="custom-input" id="ch" value="1024">
+                    <button class="add-btn" onclick="applyCustom()">套用</button>
+                </div>
+            </div></div>
+            
+            <div class="card"><div class="card-head"><h3>✨ 描述</h3></div><div class="card-body">
+                <div class="prompt-toolbar">
+                    <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📄 檔案</button>
+                    <button class="tool-btn" onclick="document.getElementById('imgInput').click()">🖼️ 圖片</button>
+                    <button class="tool-btn" onclick="aiParse()">🔮 AI解析</button>
+                    <button class="tool-btn danger" onclick="clearPrompt()">🗑️ 清除</button>
+                </div>
+                <textarea class="input" id="prompt" placeholder="描述你想要的畫面...&#10;例如：一隻可愛的柴犬，旁邊寫著「新年快樂」"></textarea>
+                <div class="upload-preview" id="uploadPreview"><img class="upload-img" id="uploadImg"><button class="upload-remove" onclick="clearUpload()">×</button></div>
+                <div class="ai-result" id="aiResult"><div class="ai-result-head"><span class="ai-result-title">🔮 AI 解析</span><button class="ai-result-use" onclick="useAiResult()">使用</button></div><div class="ai-result-text" id="aiResultText"></div></div>
+            </div></div>
+            
+            <div class="card"><div class="card-head"><h3>📝 繁中文字疊加</h3><button class="add-btn" onclick="addText()">+ 新增</button></div><div class="card-body">
+                <div class="texts" id="textBox"></div>
+                <div class="tip">💡 在圖片上疊加繁體中文字，可拖曳調整位置</div>
+            </div></div>
+            
+            <div class="card"><div class="card-head"><h3>📱 QR Code 下載連結</h3></div><div class="card-body">
+                <div class="qr-section">
+                    <div class="qr-toggle"><div class="qr-switch" id="qrSwitch" onclick="toggleQR()"></div><label>在圖片上加入 QR Code</label></div>
+                    <div class="qr-options" id="qrOptions">
+                        <span style="font-size:12px;color:var(--text2)">位置:</span>
+                        <div class="qr-pos">
+                            <button class="qr-pos-btn on" data-pos="br" onclick="setQRPos('br')">↘</button>
+                            <button class="qr-pos-btn" data-pos="bl" onclick="setQRPos('bl')">↙</button>
+                            <button class="qr-pos-btn" data-pos="tr" onclick="setQRPos('tr')">↗</button>
+                            <button class="qr-pos-btn" data-pos="tl" onclick="setQRPos('tl')">↖</button>
+                        </div>
+                        <span style="font-size:12px;color:var(--text2)">大小:</span>
+                        <input type="range" style="width:100px" id="qrSize" min="60" max="150" value="80">
+                    </div>
+                    <div class="qr-preview" id="qrPreview"><div id="qrCanvas"></div><div class="qr-url" id="qrUrl"></div></div>
+                </div>
+            </div></div>
+            
+            <div class="card"><div class="card-head"><h3>👁️ 預覽</h3></div><div class="card-body">
+                <div class="preview-wrap">
+                    <div class="preview" id="preview"><div class="preview-ph" id="ph">🖼️ 生成圖片將顯示於此</div><img class="preview-img" id="img"></div>
+                    <div class="size-badge" id="sizeBadge">1024×1024</div>
+                </div>
+            </div></div>
+            
+            <button class="gen-btn" id="genBtn" onclick="generate()">✨ 開始生成</button>
+            <div class="actions" id="actions">
+                <button class="act dl" onclick="download()"><span class="act-icon">⬇️</span>下載</button>
+                <button class="act qr" onclick="downloadWithQR()"><span class="act-icon">📱</span>含QR下載</button>
+                <button class="act imgbb" onclick="toImgBB()"><span class="act-icon">☁️</span>上傳分享</button>
+                <button class="act line" onclick="toLine()"><span class="act-icon">💬</span>LINE</button>
+            </div>
+        </div>
+        
+        <div class="page" id="setPage"><div class="header"><h1>⚙️ 設定</h1></div>
+            <div class="card"><div class="card-head"><h3>🤖 AI 生圖 API</h3></div><div class="card-body">
+                <div class="set-item"><div class="set-label">Ideogram API Key <span class="req">*推薦</span></div><input type="password" class="input" id="ideogramKey"><div class="api-hint"><a href="https://ideogram.ai/api" target="_blank">取得</a> - 最佳中文字效果</div></div>
+                <div class="set-item"><div class="set-label">Replicate Token</div><input type="password" class="input" id="repToken"><div class="api-hint"><a href="https://replicate.com/account/api-tokens" target="_blank">取得</a> - FLUX / Z-Turbo / Recraft</div></div>
+                <div class="set-item"><div class="set-label">Stability AI Key</div><input type="password" class="input" id="stabKey"><div class="api-hint"><a href="https://platform.stability.ai/" target="_blank">取得</a> - SD 3.5</div></div>
+                <div class="set-item"><div class="set-label">Together AI Key</div><input type="password" class="input" id="togetherKey"><div class="api-hint"><a href="https://api.together.xyz/" target="_blank">取得</a> - Qwen-Image</div></div>
+            </div></div>
+            <div class="card"><div class="card-head"><h3>🔮 AI 解析</h3></div><div class="card-body">
+                <div class="set-item"><div class="set-label">OpenAI API Key</div><input type="password" class="input" id="openaiKey"><div class="api-hint">GPT-4 Vision 圖片解析</div></div>
+            </div></div>
+            <div class="card"><div class="card-head"><h3>📤 分享服務</h3></div><div class="card-body">
+                <div class="set-item"><div class="set-label">ImgBB Key <span class="req">*必填</span></div><input type="password" class="input" id="imgbbKey"><div class="api-hint"><a href="https://api.imgbb.com/" target="_blank">取得</a> - 上傳圖片用</div></div>
+            </div></div>
+            <div class="card"><div class="card-head"><h3>💬 LINE 推送</h3></div><div class="card-body">
+                <div class="set-item"><div class="set-label">GAS 部署 URL <span class="req">*必填</span></div><input type="text" class="input" id="gasUrl" placeholder="https://script.google.com/..."><div class="api-hint">LINE Bot GAS 的網頁應用程式 URL</div></div>
+                <div class="set-item"><div class="set-label">LINE User ID</div><input type="text" class="input" id="lineUid" placeholder="U..."><div class="api-hint">對 Bot 說 /myid 取得</div></div>
+                <button class="test-btn" onclick="testLine()">🧪 測試 LINE 連線</button>
+            </div></div>
+            <button class="gen-btn" onclick="saveSet()">💾 儲存設定</button>
+        </div>
+    </div>
+    
+    <div class="nav">
+        <button class="nav-item on" onclick="goPage('create')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>創作</button>
+        <button class="nav-item" onclick="goPage('set')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58z"/></svg>設定</button>
+    </div>
+
+<script>
+const MODELS=[
+    {id:'ideogram-v2',name:'Ideogram v2',icon:'💡',desc:'最佳中文字融合效果',tag:'推薦',api:'ideogram'},
+    {id:'flux-pro',name:'FLUX 1.1 Pro',icon:'👑',desc:'高品質，文字能力強',tag:'',api:'replicate',model:'black-forest-labs/flux-1.1-pro'},
+    {id:'sd35',name:'SD 3.5 Large',icon:'🔮',desc:'Stability最新，文字改善',tag:'',api:'stability'},
+    {id:'qwen-image',name:'Qwen-Image',icon:'🧠',desc:'阿里通義千問，中文強',tag:'中文',api:'together',model:'Qwen/Qwen-Image'},
+    {id:'z-turbo',name:'Z-Image-Turbo',icon:'⚡',desc:'極速8步生成，雙語文字',tag:'快',api:'replicate',model:'prunaai/z-image-turbo'},
+    {id:'recraft',name:'Recraft V3',icon:'✨',desc:'向量風格，設計感強',tag:'',api:'replicate',model:'recraft-ai/recraft-v3'},
+];
+const SIZES=[{w:1024,h:1024,l:'1024²'},{w:1024,h:768,l:'4:3橫'},{w:768,h:1024,l:'3:4直'},{w:1080,h:1920,l:'IG限動'},{w:1080,h:1350,l:'IG貼文'},{w:1200,h:630,l:'FB封面'}];
+let curModel='ideogram-v2',curSize={w:1024,h:1024},genData=null,texts=[],textId=1,selText=null,dragging=false,dragOff={x:0,y:0},uploadedImg=null,aiResultText='',qrEnabled=false,qrPos='br';
+document.addEventListener('DOMContentLoaded',()=>{
+    // 開機動畫 2 秒後隱藏
+    setTimeout(()=>{document.getElementById('splash').classList.add('hide')},2200);
+    updateTime();setInterval(updateTime,1000);loadSet();renderModels();renderSizes();setupDrag();setupUpload();addText();updateSizeBadge()});
+function updateTime(){document.getElementById('time').textContent=new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',hour12:false})}
+function renderModels(){document.getElementById('modelGrid').innerHTML=MODELS.map(m=>`<div class="model ${curModel===m.id?'on':''}" onclick="selectModel('${m.id}')">${m.tag?`<span class="model-tag">${m.tag}</span>`:''}<div class="model-head"><span class="model-name">${m.name}</span><span class="model-icon">${m.icon}</span></div><div class="model-desc">${m.desc}</div></div>`).join('')}
+function selectModel(id){curModel=id;renderModels()}
+function renderSizes(){document.getElementById('sizeGrid').innerHTML=SIZES.map(s=>`<button class="size ${s.w===curSize.w&&s.h===curSize.h?'on':''}" onclick="selectSize(${s.w},${s.h})">${s.l}</button>`).join('')}
+function selectSize(w,h){curSize={w,h};document.getElementById('cw').value=w;document.getElementById('ch').value=h;renderSizes();updateSizeBadge()}
+function applyCustom(){const w=Math.min(4096,Math.max(256,+document.getElementById('cw').value||1024)),h=Math.min(4096,Math.max(256,+document.getElementById('ch').value||1024));curSize={w,h};renderSizes();updateSizeBadge();toast(`已套用 ${w}×${h}`,'ok')}
+function updateSizeBadge(){document.getElementById('sizeBadge').textContent=`${curSize.w}×${curSize.h}`;document.getElementById('preview').style.aspectRatio=`${curSize.w}/${curSize.h}`}
+function goPage(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('on'));document.getElementById(p+'Page').classList.add('on');document.querySelectorAll('.nav-item')[p==='create'?0:1].classList.add('on')}
+function toggleQR(){qrEnabled=!qrEnabled;document.getElementById('qrSwitch').classList.toggle('on',qrEnabled);document.getElementById('qrOptions').classList.toggle('show',qrEnabled)}
+function setQRPos(pos){qrPos=pos;document.querySelectorAll('.qr-pos-btn').forEach(b=>b.classList.toggle('on',b.dataset.pos===pos))}
+async function generateQR(url){const c=document.getElementById('qrCanvas');c.innerHTML='';new QRCode(c,{text:url,width:+document.getElementById('qrSize').value,height:+document.getElementById('qrSize').value});document.getElementById('qrUrl').textContent=url;document.getElementById('qrPreview').classList.add('show')}
+function setupUpload(){document.getElementById('fileInput').addEventListener('change',handleFile);document.getElementById('imgInput').addEventListener('change',handleImg)}
+function handleFile(e){const file=e.target.files[0];if(!file)return;if(file.type.startsWith('image/'))handleImgFile(file);else{const r=new FileReader();r.onload=ev=>{document.getElementById('prompt').value=ev.target.result;toast('已載入','ok')};r.readAsText(file)}e.target.value=''}
+function handleImg(e){const file=e.target.files[0];if(file)handleImgFile(file);e.target.value=''}
+function handleImgFile(file){const r=new FileReader();r.onload=ev=>{uploadedImg=ev.target.result;document.getElementById('uploadImg').src=uploadedImg;document.getElementById('uploadPreview').classList.add('show');toast('已上傳','ok')};r.readAsDataURL(file)}
+function clearUpload(){uploadedImg=null;document.getElementById('uploadPreview').classList.remove('show');document.getElementById('aiResult').classList.remove('show')}
+function clearPrompt(){document.getElementById('prompt').value='';clearUpload();toast('已清除','ok')}
+async function aiParse(){if(!uploadedImg){toast('請先上傳圖片','err');return}const s=getSet();if(!s.openaiKey){toast('請設定 OpenAI Key','err');goPage('set');return}const island=document.getElementById('island');island.classList.add('active');document.getElementById('iTitle').textContent='AI 解析';document.getElementById('iStatus').textContent='分析中...';try{const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Authorization':`Bearer ${s.openaiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-4o',messages:[{role:'user',content:[{type:'text',text:'請用繁體中文詳細描述這張圖片，用於AI圖像生成。包含主體、風格、顏色、構圖。'},{type:'image_url',image_url:{url:uploadedImg}}]}],max_tokens:400})});const data=await res.json();aiResultText=data.choices[0].message.content;document.getElementById('aiResultText').textContent=aiResultText;document.getElementById('aiResult').classList.add('show');toast('解析完成','ok')}catch(err){toast('解析失敗','err')}finally{island.classList.remove('active')}}
+function useAiResult(){document.getElementById('prompt').value=aiResultText;toast('已套用','ok')}
+function addText(){const id=textId++;texts.push({id,text:'',size:36,font:'bold',color:'#ffffff',x:50,y:50});renderTexts();renderPreviewTexts();selText=id}
+function delText(id){texts=texts.filter(t=>t.id!==id);if(selText===id)selText=null;renderTexts();renderPreviewTexts()}
+function updateText(id,k,v){const t=texts.find(x=>x.id===id);if(t){t[k]=v;renderPreviewTexts()}}
+function selectText(id){selText=id;document.querySelectorAll('.text-block').forEach(el=>el.classList.toggle('on',+el.dataset.id===id));document.querySelectorAll('.preview-text').forEach(el=>el.classList.toggle('sel',+el.dataset.id===id))}
+function renderTexts(){const box=document.getElementById('textBox');if(!texts.length){box.innerHTML='<div class="empty">點擊「+ 新增」添加繁體中文字</div>';return}box.innerHTML=texts.map((t,i)=>`<div class="text-block ${selText===t.id?'on':''}" data-id="${t.id}" onclick="selectText(${t.id})"><div class="text-head"><span class="text-title">📝 文字 ${i+1}</span><button class="del-btn" onclick="event.stopPropagation();delText(${t.id})">×</button></div><input type="text" class="text-input" placeholder="輸入繁體中文..." value="${t.text}" oninput="updateText(${t.id},'text',this.value)" onclick="event.stopPropagation()"><div class="text-opts">${['#ffffff','#000000','#ffd60a','#ff375f','#0a84ff','#30d158','#ff9f0a','#bf5af2'].map(c=>`<div class="mini-color ${t.color===c?'on':''}" style="background:${c};${c==='#000000'?'box-shadow:inset 0 0 0 1px #48484a;':''}" onclick="event.stopPropagation();updateText(${t.id},'color','${c}');renderTexts()"></div>`).join('')}${[{k:'bold',l:'粗'},{k:'noto',l:'黑'},{k:'serif',l:'明'}].map(f=>`<button class="mini-font ${t.font===f.k?'on':''}" onclick="event.stopPropagation();updateText(${t.id},'font','${f.k}');renderTexts()">${f.l}</button>`).join('')}<input type="range" class="mini-slider" min="20" max="80" value="${t.size}" oninput="updateText(${t.id},'size',+this.value)" onclick="event.stopPropagation()"></div></div>`).join('')}
+function renderPreviewTexts(){const p=document.getElementById('preview');p.querySelectorAll('.preview-text').forEach(el=>el.remove());texts.forEach(t=>{if(!t.text)return;const el=document.createElement('div');el.className=`preview-text ${selText===t.id?'sel':''}`;el.dataset.id=t.id;el.textContent=t.text;el.style.cssText=`left:${t.x}%;top:${t.y}%;transform:translate(-50%,-50%);color:${t.color};font-size:${t.size}px;font-family:${t.font==='serif'?'serif':"'Noto Sans TC',sans-serif"};font-weight:${t.font==='bold'?'900':'700'}`;p.appendChild(el)})}
+function setupDrag(){const p=document.getElementById('preview');p.addEventListener('mousedown',dragStart);p.addEventListener('mousemove',dragMove);p.addEventListener('mouseup',dragEnd);p.addEventListener('mouseleave',dragEnd);p.addEventListener('touchstart',touchStart,{passive:false});p.addEventListener('touchmove',touchMove,{passive:false});p.addEventListener('touchend',dragEnd)}
+function dragStart(e){const el=e.target.closest('.preview-text');if(!el)return;dragging=true;selectText(+el.dataset.id);el.classList.add('drag');const r=el.getBoundingClientRect();dragOff.x=e.clientX-r.left-r.width/2;dragOff.y=e.clientY-r.top-r.height/2}
+function dragMove(e){if(!dragging||!selText)return;const p=document.getElementById('preview'),r=p.getBoundingClientRect();updateText(selText,'x',Math.max(5,Math.min(95,((e.clientX-r.left-dragOff.x)/r.width)*100)));updateText(selText,'y',Math.max(5,Math.min(95,((e.clientY-r.top-dragOff.y)/r.height)*100)))}
+function dragEnd(){dragging=false;document.querySelectorAll('.preview-text').forEach(el=>el.classList.remove('drag'))}
+function touchStart(e){const t=e.touches[0],el=document.elementFromPoint(t.clientX,t.clientY);if(!el?.classList.contains('preview-text'))return;e.preventDefault();dragging=true;selectText(+el.dataset.id);el.classList.add('drag');const r=el.getBoundingClientRect();dragOff.x=t.clientX-r.left-r.width/2;dragOff.y=t.clientY-r.top-r.height/2}
+function touchMove(e){if(!dragging||!selText)return;e.preventDefault();const t=e.touches[0],p=document.getElementById('preview'),r=p.getBoundingClientRect();updateText(selText,'x',Math.max(5,Math.min(95,((t.clientX-r.left-dragOff.x)/r.width)*100)));updateText(selText,'y',Math.max(5,Math.min(95,((t.clientY-r.top-dragOff.y)/r.height)*100)))}
+let abortCtrl=null,isGenerating=false;
+function stopGenerate(){if(abortCtrl){abortCtrl.abort();abortCtrl=null}isGenerating=false;const btn=document.getElementById('genBtn');btn.textContent='✨ 開始生成';btn.onclick=generate;document.getElementById('island').classList.remove('active');document.getElementById('iBar').style.width='0%';toast('已停止','')}
+async function generate(){const prompt=document.getElementById('prompt').value.trim();if(!prompt){toast('請輸入描述','err');return}const s=getSet(),m=MODELS.find(x=>x.id===curModel);if(m.api==='ideogram'&&!s.ideogramKey){toast('請設定 Ideogram Key','err');goPage('set');return}if(m.api==='replicate'&&!s.repToken){toast('請設定 Replicate Token','err');goPage('set');return}if(m.api==='stability'&&!s.stabKey){toast('請設定 Stability Key','err');goPage('set');return}if(m.api==='together'&&!s.togetherKey){toast('請設定 Together Key','err');goPage('set');return}const btn=document.getElementById('genBtn'),island=document.getElementById('island'),bar=document.getElementById('iBar');isGenerating=true;abortCtrl=new AbortController();btn.textContent='⏹️ 停止生成';btn.onclick=stopGenerate;island.classList.add('active');document.getElementById('iTitle').textContent=m.name;document.getElementById('iStatus').textContent='準備中...';bar.style.width='5%';try{let imgUrl;setProgress(10,'連接API...');switch(m.api){case 'ideogram':imgUrl=await genIdeogram(prompt,s.ideogramKey);break;case 'replicate':imgUrl=await genReplicate(prompt,m.id,s.repToken);break;case 'stability':imgUrl=await genStability(prompt,s.stabKey);break;case 'together':imgUrl=await genTogether(prompt,m.id,s.togetherKey);break;default:throw new Error('不支援的模型')}if(!isGenerating)return;console.log('API返回:',imgUrl.substring(0,100));setProgress(90,'載入圖片...');const img=document.getElementById('img');let finalUrl=imgUrl;if(!imgUrl.startsWith('data:')){try{setProgress(92,'轉換圖片...');const proxyUrl='https://corsproxy.io/?'+encodeURIComponent(imgUrl);const res=await fetch(proxyUrl);const blob=await res.blob();finalUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob)});console.log('CORS代理轉換成功')}catch(e){console.error('代理轉換失敗:',e);throw new Error('圖片載入失敗')}}await new Promise((res,rej)=>{img.onload=()=>{console.log('圖片載入成功');img.style.display='block';document.getElementById('ph').style.display='none';res()};img.onerror=(e)=>{console.error('圖片載入失敗');rej(new Error('圖片載入失敗'))};img.src=finalUrl});setProgress(100,'完成！');genData={url:finalUrl,prompt,model:curModel,size:{...curSize},texts:JSON.parse(JSON.stringify(texts)),ts:new Date().toISOString()};document.getElementById('actions').classList.add('show');toast('生成成功！','ok')}catch(err){if(err.name==='AbortError'||!isGenerating)return;console.error(err);toast(`失敗: ${err.message}`,'err')}finally{isGenerating=false;abortCtrl=null;btn.textContent='✨ 開始生成';btn.onclick=generate;setTimeout(()=>{island.classList.remove('active');bar.style.width='0%'},800)}}
+function setProgress(pct,txt){document.getElementById('iBar').style.width=pct+'%';document.getElementById('iStatus').textContent=txt}
+async function genIdeogram(prompt,key){setProgress(20,'Ideogram 生成中...');const res=await fetch('https://api.ideogram.ai/generate',{method:'POST',headers:{'Api-Key':key,'Content-Type':'application/json'},body:JSON.stringify({image_request:{prompt,aspect_ratio:curSize.w===curSize.h?'ASPECT_1_1':curSize.w>curSize.h?'ASPECT_4_3':'ASPECT_3_4',model:'V_2'}}),signal:abortCtrl?.signal});setProgress(70,'處理結果...');if(!res.ok){const e=await res.text();throw new Error('Ideogram: '+e)}const data=await res.json();console.log('Ideogram回傳:',data);if(!data.data||!data.data[0]||!data.data[0].url)throw new Error('Ideogram無圖片URL');return data.data[0].url}
+async function genReplicate(prompt,modelId,token){setProgress(15,'連接 Replicate...');const m=MODELS.find(x=>x.id===modelId);const modelPath=m?.model||'black-forest-labs/flux-1.1-pro';const res=await fetch(`https://api.replicate.com/v1/models/${modelPath}/predictions`,{method:'POST',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({input:{prompt,width:curSize.w,height:curSize.h}}),signal:abortCtrl?.signal});if(!res.ok){const err=await res.text();throw new Error('Replicate: '+err)}let result=await res.json(),pollCount=0;console.log('Replicate初始回傳:',result);while(result.status!=='succeeded'&&result.status!=='failed'&&isGenerating){await delay(2000);if(!isGenerating)throw new Error('已停止');pollCount++;const pct=Math.min(85,20+pollCount*5);setProgress(pct,`${result.status}... (${pollCount*2}s)`);const poll=await fetch(`https://api.replicate.com/v1/predictions/${result.id}`,{headers:{'Authorization':`Bearer ${token}`},signal:abortCtrl?.signal});result=await poll.json()}console.log('Replicate最終回傳:',result);if(result.status==='failed')throw new Error('Replicate生成失敗: '+(result.error||'未知錯誤'));const output=Array.isArray(result.output)?result.output[0]:result.output;if(!output)throw new Error('Replicate無輸出');return output}
+async function genStability(prompt,key){setProgress(20,'SD 3.5 生成中...');const res=await fetch('https://api.stability.ai/v2beta/stable-image/generate/sd3',{method:'POST',headers:{'Authorization':`Bearer ${key}`,'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({prompt,model:'sd3.5-large',output_format:'png',width:curSize.w,height:curSize.h}),signal:abortCtrl?.signal});setProgress(70,'處理結果...');if(!res.ok){const err=await res.text();throw new Error('Stability: '+err)}const data=await res.json();if(data.image)return `data:image/png;base64,${data.image}`;throw new Error('無圖片')}
+async function genTogether(prompt,modelId,key){const m=MODELS.find(x=>x.id===modelId);const model=m?.model||'Qwen/Qwen-Image';setProgress(15,'連接 Together AI...');let dotCount=0;const dotInterval=setInterval(()=>{if(!isGenerating){clearInterval(dotInterval);return}dotCount++;setProgress(15+Math.min(dotCount*3,50),`生成中${'...'.slice(0,1+(dotCount%3))} (${dotCount*2}s)`)},2000);try{const res=await fetch('https://api.together.xyz/v1/images/generations',{method:'POST',headers:{'Authorization':`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model,prompt,width:Math.min(curSize.w,1024),height:Math.min(curSize.h,1024),steps:20,n:1}),signal:abortCtrl?.signal});clearInterval(dotInterval);setProgress(80,'處理結果...');if(!res.ok){const err=await res.text();throw new Error('Together: '+err)}const data=await res.json();if(data.data&&data.data[0]){return data.data[0].url||`data:image/png;base64,${data.data[0].b64_json}`}throw new Error('無圖片')}catch(e){clearInterval(dotInterval);throw e}}
+async function makeCanvas(withQR=false,qrUrl=''){const img=document.getElementById('img'),c=document.createElement('canvas');c.width=curSize.w;c.height=curSize.h;const ctx=c.getContext('2d');ctx.drawImage(img,0,0,c.width,c.height);texts.forEach(t=>{if(!t.text)return;const scale=c.width/400,fs=t.size*scale;ctx.fillStyle=t.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=15*scale;ctx.shadowOffsetX=2*scale;ctx.shadowOffsetY=2*scale;ctx.font=`${t.font==='bold'?'900':'700'} ${fs}px ${t.font==='serif'?'serif':"'Noto Sans TC',sans-serif"}`;ctx.fillText(t.text,(t.x/100)*c.width,(t.y/100)*c.height)});if(withQR&&qrUrl){const qrCanvas=document.querySelector('#qrCanvas canvas');if(qrCanvas){const qrScale=curSize.w/1024,qrW=+document.getElementById('qrSize').value*qrScale,margin=20*qrScale;let qrX,qrY;if(qrPos==='br'){qrX=c.width-qrW-margin;qrY=c.height-qrW-margin}else if(qrPos==='bl'){qrX=margin;qrY=c.height-qrW-margin}else if(qrPos==='tr'){qrX=c.width-qrW-margin;qrY=margin}else{qrX=margin;qrY=margin}ctx.shadowColor='transparent';ctx.fillStyle='#fff';ctx.fillRect(qrX-4,qrY-4,qrW+8,qrW+8);ctx.drawImage(qrCanvas,qrX,qrY,qrW,qrW)}}return c}
+async function download(){if(!genData){toast('請先生成','err');return}try{const c=await makeCanvas();const dataUrl=c.toDataURL('image/png');const a=document.createElement('a');a.download=`繁中生圖_${Date.now()}.png`;a.href=dataUrl;a.click();toast('下載完成','ok')}catch(e){console.error('下載失敗:',e);toast('下載失敗: '+e.message,'err')}}
+async function downloadWithQR(){if(!genData){toast('請先生成','err');return}if(!qrEnabled){toast('請先開啟QR Code','err');return}try{toast('上傳中...','');const url=await uploadImgBB();if(!url)return;await generateQR(url);await delay(500);const c=await makeCanvas(true,url);const dataUrl=c.toDataURL('image/png');const a=document.createElement('a');a.download=`繁中生圖_QR_${Date.now()}.png`;a.href=dataUrl;a.click();toast('下載完成','ok')}catch(e){console.error('QR下載失敗:',e);toast('下載失敗: '+e.message,'err')}}
+async function toImgBB(){const url=await uploadImgBB();if(url){if(qrEnabled)await generateQR(url);navigator.clipboard.writeText(url);toast('已上傳！連結已複製','ok')}}
+async function uploadImgBB(){const s=getSet();if(!s.imgbbKey){toast('請設定ImgBB Key','err');goPage('set');return null}try{const c=await makeCanvas();const dataUrl=c.toDataURL('image/png');console.log('Canvas導出成功，大小:',dataUrl.length);const fd=new FormData();fd.append('image',dataUrl.split(',')[1]);fd.append('key',s.imgbbKey);const res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:fd});const data=await res.json();console.log('ImgBB回應:',data);if(data.success)return data.data.url;throw new Error(data.error?.message||'上傳失敗')}catch(e){console.error('上傳失敗:',e);toast('上傳失敗: '+e.message,'err');return null}}
+async function toLine(){const s=getSet();if(!s.gasUrl){toast('請設定 GAS URL','err');goPage('set');return}if(!s.imgbbKey){toast('請設定 ImgBB Key','err');goPage('set');return}if(!genData){toast('請先生成','err');return}toast('上傳圖片中...','');try{const imgUrl=await uploadImgBB();if(!imgUrl)return;toast('發送到 LINE...','');const txt=texts.filter(t=>t.text).map(t=>t.text).join('、');await fetch(s.gasUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'sendImage',imageUrl:imgUrl,prompt:genData.prompt,texts:txt,userId:s.lineUid||''}),mode:'no-cors'});toast('已發送到 LINE！','ok')}catch(e){toast('發送失敗: '+e.message,'err');console.error(e)}}
+function copyText(t){navigator.clipboard.writeText(t).then(()=>toast('已複製連結','ok')).catch(()=>toast('複製失敗','err'))}
+async function testLine(){const gasUrl=document.getElementById('gasUrl').value.trim();const uid=document.getElementById('lineUid').value.trim();if(!gasUrl){toast('請輸入 GAS URL','err');return}toast('測試中...','');try{await fetch(gasUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'testNotify',userId:uid}),mode:'no-cors'});toast('已發送測試訊息，請查看 LINE','ok')}catch(e){toast('測試失敗','err')}}
+function saveSet(){localStorage.setItem('twImgSet',JSON.stringify({ideogramKey:document.getElementById('ideogramKey').value,repToken:document.getElementById('repToken').value,stabKey:document.getElementById('stabKey').value,togetherKey:document.getElementById('togetherKey').value,openaiKey:document.getElementById('openaiKey').value,imgbbKey:document.getElementById('imgbbKey').value,gasUrl:document.getElementById('gasUrl').value,lineUid:document.getElementById('lineUid').value}));toast('已儲存','ok')}
+function loadSet(){const s=getSet();document.getElementById('ideogramKey').value=s.ideogramKey||'';document.getElementById('repToken').value=s.repToken||'';document.getElementById('stabKey').value=s.stabKey||'';document.getElementById('togetherKey').value=s.togetherKey||'';document.getElementById('openaiKey').value=s.openaiKey||'';document.getElementById('imgbbKey').value=s.imgbbKey||'';document.getElementById('gasUrl').value=s.gasUrl||'';document.getElementById('lineUid').value=s.lineUid||''}
+function getSet(){try{return JSON.parse(localStorage.getItem('twImgSet'))||{}}catch{return{}}}
+function toast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;setTimeout(()=>t.classList.remove('show'),2500)}
+function delay(ms){return new Promise(res=>setTimeout(res,ms))}
+</script>
+</body>
+</html>
