@@ -2,28 +2,32 @@
 
 git add index.html
 
-git commit -m "fix: 重寫圖片載入系統 + Qwen中文優化
+git commit -m "fix: 重寫圖片載入 + 新增AI提示詞建議
 
 ## 主要修復
 
-### 1. 圖片載入系統全面重寫
-新增 proxyLoadImage() 使用 6 種方式依序嘗試：
-1. 直接載入（crossOrigin）
-2. wsrv.nl 圖片代理
-3. images.weserv.nl 圖片代理
-4. api.allorigins.win fetch代理
-5. corsproxy.io fetch代理
-6. api.codetabs.com fetch代理
+### 1. 圖片載入邏輯重寫
+- 先嘗試直接載入原始URL
+- 失敗則依序嘗試3個圖片代理：
+  1. wsrv.nl
+  2. images.weserv.nl  
+  3. imageproxy.pimg.tw
+- 每個方式8秒超時自動切換
+- 使用Image物件測試載入（無需CORS）
 
-每種方式 20 秒超時，自動切換下一個
+### 2. 新增 AI 提示詞建議功能
+- 點擊「💡 AI建議」按鈕
+- 輸入簡短描述，AI生成5個優化建議
+- 點擊建議即可套用
+- 使用 gpt-4o-mini 快速生成
 
-### 2. Qwen-Image 中文優化
-- 用雙引號包文字（手機友好）
-- 自動偵測引號內文字，加入渲染提示
-- 強制 response_format: b64_json
-- 步數提高到 30
+### 3. Qwen-Image 中文優化
+- 用雙引號包住要顯示的文字
+- 自動加入文字渲染提示
+- 強制 b64_json 格式（避免CORS）
+- 步數提高到30
 
-### 3. AI 解析可編輯
+### 4. AI 解析可編輯
 - div → textarea"
 
 git push origin main
