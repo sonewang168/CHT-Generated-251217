@@ -4884,6 +4884,7 @@
                         </div>
                         
                         <div class="guide-features">
+                            <button class="feature-tag" style="background:linear-gradient(135deg,#f472b6,#8b5cf6);color:white;" onclick="showAiGenPanel()">🎨 AI生圖</button>
                             <button class="feature-tag" onclick="scrollToTool('brushBtn')">🖌️ 繪圖</button>
                             <button class="feature-tag" onclick="scrollToTool('filterBtn')">🎨 濾鏡</button>
                             <button class="feature-tag" onclick="scrollToTool('beautyBtn')">✨ 美顏</button>
@@ -4893,7 +4894,7 @@
                             <button class="feature-tag" onclick="scrollToTool('pdfToolBtn')">📑 PDF</button>
                             <button class="feature-tag" onclick="scrollToTool('curveBtn')">📈 曲線</button>
                         </div>
-                        <div class="guide-hint">👆 點擊上方標籤可快速跳到對應工具（需先上傳圖片）</div>
+                        <div class="guide-hint">👆 點擊「🎨 AI生圖」可直接生成圖片｜其他功能需先上傳圖片</div>
                     </div>
                 </div>
                 
@@ -5000,7 +5001,7 @@
                 </div>
                 
                 <!-- AI 生圖面板 -->
-                <div class="ai-panel" id="aiGenPanel" style="display:none;">
+                <div class="ai-panel" id="aiGenPanel">
                     <div class="panel-title">🎨 AI 生圖工坊</div>
                     
                     <!-- 模型選擇 -->
@@ -5078,7 +5079,7 @@
                 </div>
                 
                 <!-- 文字疊加面板 -->
-                <div class="ai-panel" id="textOverlayPanel" style="display:none;">
+                <div class="ai-panel" id="textOverlayPanel">
                     <div class="panel-title">🀄 繁體中文文字疊加</div>
                     
                     <!-- 文字輸入 -->
@@ -18334,15 +18335,22 @@
         
         // ===== AI 生圖功能 =====
         function showAiGenPanel() {
+            // 顯示編輯區（即使沒有圖片）
+            document.getElementById('uploadZone').style.display = 'none';
+            document.getElementById('canvasWrapper').classList.add('show');
             document.querySelectorAll('.ai-panel').forEach(p => p.classList.remove('show'));
             document.getElementById('aiGenPanel').classList.add('show');
             updateGenModelInfo();
         }
         
         function showTextOverlayPanel() {
-            if(!canvas.width){showToast('⚠️ 請先上傳圖片');return;}
+            if(!canvas.width){showToast('⚠️ 請先上傳圖片或生成圖片');return;}
             document.querySelectorAll('.ai-panel').forEach(p => p.classList.remove('show'));
             document.getElementById('textOverlayPanel').classList.add('show');
+        }
+        
+        function hideAiPanels() {
+            document.querySelectorAll('.ai-panel').forEach(p => p.classList.remove('show'));
         }
         
         function updateGenModelInfo() {
