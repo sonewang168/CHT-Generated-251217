@@ -5100,7 +5100,10 @@
                     
                     <!-- 最終提示詞預覽 -->
                     <div id="finalPromptPreview" style="display:none;margin-bottom:10px;padding:10px;background:var(--bg-input);border-radius:8px;border:1px dashed var(--border);">
-                        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">📝 最終提示詞：</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                            <span style="font-size:11px;color:var(--text-secondary);">📝 最終提示詞：</span>
+                            <span id="currentPosDisplay" style="font-size:11px;color:var(--accent);font-weight:bold;"></span>
+                        </div>
                         <div id="finalPromptText" style="font-size:12px;color:var(--text-primary);line-height:1.5;"></div>
                     </div>
                     
@@ -7734,6 +7737,7 @@
         let generatedImageUrl = '';
         let overlayPosition = 'mc';
         let genTextPosition = 'middle-center';
+        window.genTextPosition = 'middle-center';
         let aiResultText = '';
         
         // 拖曳系統變數（提前定義）
@@ -18422,12 +18426,14 @@
                 btn.style.color = 'var(--text-secondary)';
             });
             // 高亮當前選中的位置
-            const activeBtn = document.querySelector(`.gen-pos-btn[data-pos="${genTextPosition}"]`);
+            const currentPos = getCurrentGenTextPosition();
+            const activeBtn = document.querySelector(`.gen-pos-btn[data-pos="${currentPos}"]`);
             if(activeBtn) {
                 activeBtn.style.border = '2px solid var(--accent)';
                 activeBtn.style.background = 'var(--accent)';
                 activeBtn.style.color = 'white';
             }
+            console.log('🔄 syncGenTextPosButtons - 當前位置:', currentPos);
         }
         
         function showTextOverlayPanel() {
@@ -18503,8 +18509,11 @@
                 pos = 'middle-center';
             }
             
+            // 更新全域變數
+            window.genTextPosition = pos;
             genTextPosition = pos;
-            console.log('setGenTextPos - 位置已更新為:', pos);
+            
+            console.log('✅ setGenTextPos - 位置已設為:', pos);
             
             // 更新按鈕樣式
             syncGenTextPosButtons();
@@ -18531,6 +18540,18 @@
                 const finalPrompt = buildFinalPrompt();
                 document.getElementById('finalPromptText').textContent = finalPrompt;
                 document.getElementById('finalPromptPreview').style.display = 'block';
+                
+                // 顯示當前位置和方向
+                const currentPos = getCurrentGenTextPosition();
+                const textDirEl = document.querySelector('input[name="genTextDir"]:checked');
+                const textDir = textDirEl ? textDirEl.value : 'horizontal';
+                const posNames = {
+                    'top-left': '↖左上', 'top-center': '↑上中', 'top-right': '↗右上',
+                    'middle-left': '←左中', 'middle-center': '●正中', 'middle-right': '→右中',
+                    'bottom-left': '↙左下', 'bottom-center': '↓下中', 'bottom-right': '↘右下'
+                };
+                const dirName = textDir === 'vertical' ? '直書' : '橫書';
+                document.getElementById('currentPosDisplay').textContent = `📍${posNames[currentPos]} | ${dirName}`;
             } else if(!textContent) {
                 document.getElementById('finalPromptPreview').style.display = 'none';
             }
@@ -18541,10 +18562,16 @@
             document.getElementById('genTextContent').value = '';
             document.getElementById('promptSuggestions').style.display = 'none';
             document.getElementById('finalPromptPreview').style.display = 'none';
+            window.genTextPosition = 'middle-center';
             genTextPosition = 'middle-center';
             syncGenTextPosButtons();
             document.querySelector('input[name="genTextDir"][value="horizontal"]').checked = true;
             showToast('🗑️ 已清除');
+        }
+        
+        function getCurrentGenTextPosition() {
+            // 優先使用 window 上的變數，確保一致性
+            return window.genTextPosition || genTextPosition || 'middle-center';
         }
         
         function buildFinalPrompt() {
@@ -18558,9 +18585,9 @@
             const textDir = textDirEl ? textDirEl.value : 'horizontal';
             const isVertical = textDir === 'vertical';
             
-            // 取得當前位置（直接從變數讀取）
-            const currentPos = genTextPosition || 'middle-center';
-            console.log('buildFinalPrompt - 當前位置:', currentPos, '方向:', textDir); // debug
+            // 取得當前位置
+            const currentPos = getCurrentGenTextPosition();
+            console.log('📍 buildFinalPrompt - 位置:', currentPos, '方向:', textDir);
             
             // 位置對應的描述（中文）
             const positionMapCN = {
@@ -18621,12 +18648,19 @@
             const basePrompt = document.getElementById('genPrompt').value.trim();
             if(!basePrompt){showToast('⚠️ 請輸入描述');return;}
             
-            // 確保位置變數有效
-            const validPositions = ['top-left', 'top-center', 'top-right', 'middle-left', 'middle-center', 'middle-right', 'bottom-left', 'bottom-center', 'bottom-right'];
-            if(!validPositions.includes(genTextPosition)) {
-                genTextPosition = 'middle-center';
+            // 取得當前位置
+            const currentPos = getCurrentGenTextPosition();
+            const textContent = document.getElementById('genTextContent').value.trim();
+            
+            // 如果有文字設定，顯示位置確認
+            if(textContent) {
+                const posNames = {
+                    'top-left': '左上角', 'top-center': '頂部中央', 'top-right': '右上角',
+                    'middle-left': '左側中間', 'middle-center': '正中央', 'middle-right': '右側中間',
+                    'bottom-left': '左下角', 'bottom-center': '底部中央', 'bottom-right': '右下角'
+                };
+                console.log('🚀 startGenerate - 文字:', textContent, '位置:', posNames[currentPos]);
             }
-            console.log('startGenerate - 使用位置:', genTextPosition);
             
             // 組合最終提示詞（包含文字設定）
             const prompt = buildFinalPrompt();
@@ -18878,7 +18912,6 @@
                     console.error('圖片轉換失敗:', err);
                     showToast('❌ 圖片載入失敗，請重新生成');
                 });
-        }
         }
         
         // 將 URL 圖片轉換為 Base64（避免 canvas 污染）
