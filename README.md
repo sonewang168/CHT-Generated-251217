@@ -1,67 +1,86 @@
-# 繁中生圖工坊 v1.4 更新說明
+# 繁中生圖工坊 v1.5 更新說明
 
-## 🔧 1. 圖片載入優化
+## 🔧 重大修復 - 解決所有 API CORS 問題
 
-**新策略**：移除 CORS 相關屬性，讓瀏覽器直接載入
-
-```javascript
-img.removeAttribute('crossorigin');
-img.referrerPolicy='no-referrer';
-```
-
-**載入順序**：
-```
-原始URL → wsrv.nl → weserv.nl → pimg.tw
-   ↓         ↓          ↓          ↓
- 10秒超時  10秒超時   10秒超時    10秒超時
-```
-
-**關鍵改變**：
-- 不再要求 CORS，直接顯示圖片
-- `referrerPolicy='no-referrer'` 繞過防盜鏈檢查
-- 下載時再處理 canvas 轉換
+### 問題根源
+| API | 原始錯誤 | 原因 |
+|-----|----------|------|
+| Ideogram | CORS blocked | API 不允許瀏覽器直接調用 |
+| Replicate | CORS blocked | API 不允許瀏覽器直接調用 |
+| Stability AI | 400 Bad Request | 需要 FormData 格式 |
+| Together AI | 401 Invalid key | **你的 API Key 無效** |
 
 ---
 
-## 💾 2. 設定備份功能（防止 API KEY 遺失）
+### 修復方案
 
-在「設定」頁面最下方新增「備份與還原」區塊：
+#### 1️⃣ Ideogram & Replicate
+使用 **CORS 代理** `corsproxy.io` 轉發請求：
+```javascript
+fetch('https://corsproxy.io/?https://api.ideogram.ai/generate', {...})
+```
+
+#### 2️⃣ Stability AI
+改用 **FormData** 格式（非 JSON）：
+```javascript
+const fd = new FormData();
+fd.append('prompt', prompt);
+fd.append('model', 'sd3.5-large');
+fd.append('output_format', 'png');
+```
+
+#### 3️⃣ Together AI (Qwen-Image)
+⚠️ **你的 API Key 無效或過期！**
+
+請到 https://api.together.ai/settings/api-keys 重新申請。
+
+---
+
+## 💾 設定備份功能
+
+在「設定」頁面最下方：
 
 | 按鈕 | 功能 |
 |------|------|
-| 📤 導出設定 | 將所有 API KEY 保存為 JSON 檔案 |
-| 📥 導入設定 | 從 JSON 檔案還原 API KEY |
+| 📤 導出設定 | 保存所有 API KEY 為 JSON 檔案 |
+| 📥 導入設定 | 從 JSON 檔案還原 |
 
-**使用流程**：
-1. 設定完所有 API KEY 後，點擊「📤 導出設定」
-2. 保存下載的 JSON 檔案到安全位置
-3. 如果 API KEY 遺失，點擊「📥 導入設定」選擇檔案還原
+**建議：設定完成後立即導出備份！**
 
 ---
 
-## 💡 3. AI 提示詞建議功能
+## 💡 AI 提示詞建議
 
-**使用方式**：
 1. 輸入簡短描述（如：柴犬 新年）
 2. 點擊「💡 建議」按鈕
-3. AI 生成 5 個優化提示詞
-4. 點擊任一建議即可套用
+3. 選擇一個優化後的提示詞
 
 ---
 
-## 🧠 4. Qwen-Image 中文優化
+## 🧠 Qwen-Image 中文用法
 
-**正確用法**：
 ```
 可愛柴犬，紅色招牌寫著"新年快樂"
 ```
 
 用 **雙引號** 包住要顯示的文字！
 
-**自動優化**：
-- 偵測引號文字 → 加入文字渲染提示
-- 強制 `response_format: b64_json`（100%避免CORS）
-- 步數：30
+---
+
+## ⚠️ 重要提醒
+
+1. **Together AI Key 需要重新申請**
+   - 錯誤訊息：`Invalid API key provided`
+   - 網址：https://api.together.ai/settings/api-keys
+
+2. **CORS 代理可能不穩定**
+   - 如果 Ideogram/Replicate 還是失敗
+   - 可能是 corsproxy.io 暫時不可用
+   - 建議稍後再試
+
+3. **設定備份**
+   - 設定完成後立即導出
+   - 避免休眠後遺失
 
 ---
 
@@ -69,18 +88,10 @@ img.referrerPolicy='no-referrer';
 
 ```bash
 git add index.html
-git commit -m "fix: 圖片載入優化 + 設定備份功能 + AI建議"
+git commit -m "fix: 修復所有API的CORS問題 + 設定備份功能"
 git push origin main
 ```
 
 ---
 
-## ⚠️ 重要提醒
-
-**第一次使用後，請立即導出設定備份！**
-
-這樣即使瀏覽器清除資料或休眠後遺失，也能快速還原。
-
----
-
-*v1.4 by Sone Wang*
+*v1.5 by Sone Wang*

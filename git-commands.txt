@@ -2,34 +2,29 @@
 
 git add index.html
 
-git commit -m "fix: 圖片載入優化 + 設定備份功能 + AI建議
+git commit -m "fix: 修復所有API的CORS問題 + 設定備份功能
 
-## 主要更新
+## 重大修復
 
-### 1. 圖片載入優化
-- 移除 crossorigin 屬性（避免CORS檢查）
-- 設置 referrerPolicy='no-referrer'（避免防盜鏈）
-- 新增 tryLoadImage() 函數依序嘗試：
-  1. 原始URL直接載入
-  2. wsrv.nl 圖片代理
-  3. images.weserv.nl 圖片代理
-  4. imageproxy.pimg.tw 圖片代理
-- 每個方式10秒超時自動切換
+### 1. Ideogram & Replicate - 使用 CORS 代理
+- 通過 corsproxy.io 轉發 API 請求
+- 解決瀏覽器 CORS 政策阻擋問題
 
-### 2. 設定備份功能（防止API KEY遺失）
-- 新增「📤 導出設定」按鈕
-- 新增「📥 導入設定」按鈕
-- 設定保存為JSON檔案，可永久保存
-- 休眠/清除資料後可快速還原
+### 2. Stability AI - 修正請求格式
+- 改用 FormData 格式（原本錯誤使用 JSON）
+- Accept: image/* 直接返回圖片
 
-### 3. AI 提示詞建議功能
-- 輸入簡短描述後點擊「💡 建議」
-- AI生成5個優化後的完整提示詞
-- 點擊建議即可套用
-
-### 4. Qwen-Image 優化
+### 3. Together AI (Qwen-Image)
 - 強制 response_format: b64_json
 - 自動加入中文文字渲染提示
-- 步數提高到30"
+- 步數提高到 30
+
+### 4. 設定備份功能
+- 新增「📤 導出設定」「📥 導入設定」
+- API KEY 保存為 JSON 檔案
+
+### 5. AI 提示詞建議
+- 輸入簡短描述後點擊「💡 建議」
+- AI 生成 5 個優化提示詞"
 
 git push origin main
