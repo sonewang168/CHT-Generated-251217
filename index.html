@@ -18228,17 +18228,41 @@
                 return;
             }
             
+            if (!canvas.width || !canvas.height) {
+                showToast('⚠️ 請先載入圖片');
+                return;
+            }
+            
             showToast('💬 傳送中...');
             
             try {
-                // 嘗試取得圖片資料（可能因跨域而失敗）
                 let imageData;
+                
+                // 嘗試取得圖片資料
                 try {
                     imageData = canvas.toDataURL('image/png');
                 } catch (canvasError) {
-                    showToast('❌ 無法取得圖片（可能含有跨域內容）');
-                    console.error('Canvas toDataURL 錯誤:', canvasError);
-                    return;
+                    console.warn('Canvas toDataURL 錯誤，嘗試重新載入圖片...', canvasError);
+                    
+                    // 嘗試透過創建新 canvas 來解決
+                    try {
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = canvas.width;
+                        tempCanvas.height = canvas.height;
+                        const tempCtx = tempCanvas.getContext('2d');
+                        
+                        // 先填充白色背景
+                        tempCtx.fillStyle = '#ffffff';
+                        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        
+                        // 嘗試從原始 canvas 複製
+                        tempCtx.drawImage(canvas, 0, 0);
+                        imageData = tempCanvas.toDataURL('image/png');
+                    } catch (e2) {
+                        showToast('❌ 無法取得圖片（跨域限制）\n請重新上傳圖片或使用「下載」後再分享');
+                        console.error('Canvas 跨域錯誤:', e2);
+                        return;
+                    }
                 }
                 
                 const payload = {
@@ -18250,12 +18274,13 @@
                     payload.userId = settings.lineUserId;
                 }
                 
-                await fetch(settings.gasUrl, {
+                const response = await fetch(settings.gasUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                     mode: 'no-cors'
                 });
+                
                 showToast('✅ 已傳送到 LINE！');
             } catch (e) {
                 showToast('❌ 傳送失敗: ' + e.message);
@@ -18392,6 +18417,25 @@
             document.querySelectorAll('.ai-panel').forEach(p => p.classList.remove('show'));
             document.getElementById('aiGenPanel').classList.add('show');
             updateGenModelInfo();
+            
+            // 同步位置按鈕狀態與變數（修復第二次生圖位置錯亂問題）
+            syncGenTextPosButtons();
+        }
+        
+        function syncGenTextPosButtons() {
+            // 重置所有按鈕樣式
+            document.querySelectorAll('.gen-pos-btn').forEach(btn => {
+                btn.style.border = '1px solid var(--border)';
+                btn.style.background = 'var(--bg-input)';
+                btn.style.color = 'var(--text-secondary)';
+            });
+            // 高亮當前選中的位置
+            const activeBtn = document.querySelector(`.gen-pos-btn[data-pos="${genTextPosition}"]`);
+            if(activeBtn) {
+                activeBtn.style.border = '2px solid var(--accent)';
+                activeBtn.style.background = 'var(--accent)';
+                activeBtn.style.color = 'white';
+            }
         }
         
         function showTextOverlayPanel() {
@@ -18460,19 +18504,19 @@
         }
         
         function setGenTextPos(pos) {
-            genTextPosition = pos;
-            console.log('位置已更新為:', pos); // debug
-            document.querySelectorAll('.gen-pos-btn').forEach(btn => {
-                btn.style.border = '1px solid var(--border)';
-                btn.style.background = 'var(--bg-input)';
-                btn.style.color = 'var(--text-secondary)';
-            });
-            const activeBtn = document.querySelector(`.gen-pos-btn[data-pos="${pos}"]`);
-            if(activeBtn) {
-                activeBtn.style.border = '2px solid var(--accent)';
-                activeBtn.style.background = 'var(--accent)';
-                activeBtn.style.color = 'white';
+            // 確保位置值有效
+            const validPositions = ['top-left', 'top-center', 'top-right', 'middle-left', 'middle-center', 'middle-right', 'bottom-left', 'bottom-center', 'bottom-right'];
+            if(!validPositions.includes(pos)) {
+                console.warn('無效的位置:', pos);
+                pos = 'middle-center';
             }
+            
+            genTextPosition = pos;
+            console.log('setGenTextPos - 位置已更新為:', pos);
+            
+            // 更新按鈕樣式
+            syncGenTextPosButtons();
+            
             // 實時更新預覽
             updateFinalPromptPreview();
         }
@@ -18505,8 +18549,8 @@
             document.getElementById('genTextContent').value = '';
             document.getElementById('promptSuggestions').style.display = 'none';
             document.getElementById('finalPromptPreview').style.display = 'none';
-            genTextPosition = 'middle-center'; // 直接重設變數
-            setGenTextPos('middle-center');
+            genTextPosition = 'middle-center';
+            syncGenTextPosButtons();
             document.querySelector('input[name="genTextDir"][value="horizontal"]').checked = true;
             showToast('🗑️ 已清除');
         }
@@ -18585,6 +18629,13 @@
             const basePrompt = document.getElementById('genPrompt').value.trim();
             if(!basePrompt){showToast('⚠️ 請輸入描述');return;}
             
+            // 確保位置變數有效
+            const validPositions = ['top-left', 'top-center', 'top-right', 'middle-left', 'middle-center', 'middle-right', 'bottom-left', 'bottom-center', 'bottom-right'];
+            if(!validPositions.includes(genTextPosition)) {
+                genTextPosition = 'middle-center';
+            }
+            console.log('startGenerate - 使用位置:', genTextPosition);
+            
             // 組合最終提示詞（包含文字設定）
             const prompt = buildFinalPrompt();
             
@@ -18661,7 +18712,22 @@
             if(!res.ok) throw new Error(await res.text());
             const data = await res.json();
             if(!data.data?.[0]?.url) throw new Error('無圖片');
-            return data.data[0].url;
+            
+            // 將 URL 轉換為 Base64 以避免跨域問題
+            setGenProgress(80, '轉換圖片格式...');
+            try {
+                const imgRes = await fetch('https://wsrv.nl/?url='+encodeURIComponent(data.data[0].url)+'&output=png');
+                const blob = await imgRes.blob();
+                return new Promise((resolve,reject)=>{
+                    const reader = new FileReader();
+                    reader.onload = ()=>resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch(e) {
+                console.warn('無法轉換為 Base64，使用原始 URL');
+                return data.data[0].url;
+            }
         }
         
         async function genReplicate(prompt,modelPath,w,h) {
@@ -18694,7 +18760,22 @@
             if(result.status==='failed') throw new Error(result.error||'生成失敗');
             const output = Array.isArray(result.output)?result.output[0]:result.output;
             if(!output) throw new Error('無輸出');
-            return output;
+            
+            // 將 URL 轉換為 Base64 以避免跨域問題
+            setGenProgress(85, '轉換圖片格式...');
+            try {
+                const imgRes = await fetch('https://wsrv.nl/?url='+encodeURIComponent(output)+'&output=png');
+                const blob = await imgRes.blob();
+                return new Promise((resolve,reject)=>{
+                    const reader = new FileReader();
+                    reader.onload = ()=>resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch(e) {
+                console.warn('無法轉換為 Base64，使用原始 URL');
+                return output;
+            }
         }
         
         async function genStability(prompt) {
@@ -18759,6 +18840,25 @@
         
         function useGeneratedImage() {
             if(!generatedImageUrl){showToast('⚠️ 沒有生成的圖片');return;}
+            
+            // 如果是 Base64，直接載入
+            if(generatedImageUrl.startsWith('data:')) {
+                const img = new Image();
+                img.onload = function() {
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    ctx.drawImage(img, 0, 0);
+                    showEditor();
+                    document.getElementById('aiGenPanel').classList.remove('show');
+                    showToast('✅ 圖片已載入編輯器');
+                };
+                img.src = generatedImageUrl;
+                return;
+            }
+            
+            // 如果是 URL，使用代理載入以避免 CORS 問題
+            showToast('🔄 載入圖片中...');
+            const proxyUrl = 'https://wsrv.nl/?url='+encodeURIComponent(generatedImageUrl)+'&output=png';
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = function() {
@@ -18770,22 +18870,20 @@
                 showToast('✅ 圖片已載入編輯器');
             };
             img.onerror = function() {
-                // 嘗試使用代理
-                const proxyUrl = 'https://wsrv.nl/?url='+encodeURIComponent(generatedImageUrl);
+                // 嘗試直接載入（可能無法分享）
                 const img2 = new Image();
-                img2.crossOrigin = 'anonymous';
                 img2.onload = function() {
                     canvas.width = img2.naturalWidth;
                     canvas.height = img2.naturalHeight;
                     ctx.drawImage(img2, 0, 0);
                     showEditor();
                     document.getElementById('aiGenPanel').classList.remove('show');
-                    showToast('✅ 圖片已載入編輯器');
+                    showToast('⚠️ 圖片已載入，但可能無法分享到 LINE');
                 };
                 img2.onerror = ()=>showToast('❌ 圖片載入失敗');
-                img2.src = proxyUrl;
+                img2.src = generatedImageUrl;
             };
-            img.src = generatedImageUrl;
+            img.src = proxyUrl;
         }
         
         function downloadGenImage() {
