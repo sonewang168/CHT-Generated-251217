@@ -2,15 +2,34 @@
 
 git add index.html
 
-git commit -m "fix: 優化 Replicate 模型參數
+git commit -m "feat: 繁中生圖工坊 Pro V3.0 - 整合AI生圖+圖文魔術師
 
-## 修復內容
+## 🆕 新增功能
 
-### Replicate 模型優化
-- FLUX 1.1 Pro: 加入 prompt_upsampling
-- Z-Image-Turbo: 設定 num_inference_steps=8
-- Recraft V3: 修正 size 參數格式
-- 加入 Prefer:wait header 加速回應
-- 優化輪詢邏輯，增加錯誤處理"
+### AI 生圖工坊
+- Ideogram V2（英文文字強）
+- FLUX 1.1 Pro（最高品質）
+- Z-Image-Turbo（極速8步）
+- Recraft V3（向量設計風）
+- SD 3.5 Large（Stability最新）
+- Qwen-Image（中文文字最強）
+
+### 繁體中文文字疊加
+- 橫書 / 直書 切換
+- 九宮格快速定位
+- 自由拖曳到任意位置
+- 字體大小/顏色/描邊設定
+
+### AI 提示詞建議
+- OpenAI GPT-4o-mini 優化提示詞
+
+### 設定備份/還原
+- 導出/導入 JSON 設定檔
+- 永不遺失 API KEY
+
+## 📊 程式碼統計
+- 總行數：18,890 行
+- 檔案大小：812 KB
+- 功能數量：50+"
 
 git push origin main

@@ -1,63 +1,133 @@
-# 繁中生圖工坊 v1.5 更新說明
+# 🎨 繁中生圖工坊 Pro V3.0
 
-## 🔧 重大修復 - 解決所有 API CORS 問題
+## 整合版本 = 繁中生圖工坊 + 圖文魔術師
 
-### 問題根源
-| API | 原始錯誤 | 原因 |
-|-----|----------|------|
-| Ideogram | CORS blocked | API 不允許瀏覽器直接調用 |
-| Replicate | CORS blocked | API 不允許瀏覽器直接調用 |
-| Stability AI | 400 Bad Request | 需要 FormData 格式 |
-| Together AI | 401 Invalid key | **你的 API Key 無效** |
+**程式碼：18,890 行 | 檔案大小：812 KB**
 
 ---
 
-### 修復方案
+## 🆕 新增功能
 
-#### 1️⃣ Ideogram & Replicate
-使用 **CORS 代理** `corsproxy.io` 轉發請求：
-```javascript
-fetch('https://corsproxy.io/?https://api.ideogram.ai/generate', {...})
-```
+### 1️⃣ AI 生圖工坊（6 個模型）
 
-#### 2️⃣ Stability AI
-改用 **FormData** 格式（非 JSON）：
-```javascript
-const fd = new FormData();
-fd.append('prompt', prompt);
-fd.append('model', 'sd3.5-large');
-fd.append('output_format', 'png');
-```
+| 模型 | 平台 | 特色 |
+|------|------|------|
+| Ideogram V2 | Ideogram | 英文文字最強 |
+| FLUX 1.1 Pro | Replicate | 最高品質 |
+| Z-Image-Turbo | Replicate | 極速 8 步生成 |
+| Recraft V3 | Replicate | 向量設計風 |
+| SD 3.5 Large | Stability | 最新模型 |
+| **Qwen-Image** | Together | **中文文字最強** |
 
-#### 3️⃣ Together AI (Qwen-Image)
-⚠️ **你的 API Key 無效或過期！**
+### 2️⃣ 繁體中文文字疊加
 
-請到 https://api.together.ai/settings/api-keys 重新申請。
+- ✅ 輸入繁體中文文字
+- ✅ 選擇 **橫書** 或 **直書**
+- ✅ **九宮格** 快速定位
+- ✅ **自由拖曳** 到任意位置
+- ✅ 字體大小 / 顏色 / 描邊設定
 
----
+### 3️⃣ AI 提示詞建議
 
-## 💾 設定備份功能
+- 輸入簡短描述
+- AI 生成 5 個優化建議
+- 點擊即可套用
 
-在「設定」頁面最下方：
+### 4️⃣ 設定備份/還原
 
-| 按鈕 | 功能 |
-|------|------|
-| 📤 導出設定 | 保存所有 API KEY 為 JSON 檔案 |
-| 📥 導入設定 | 從 JSON 檔案還原 |
-
-**建議：設定完成後立即導出備份！**
+- 📤 導出設定（JSON 檔案）
+- 📥 導入設定（從 JSON 還原）
+- **永不遺失 API KEY！**
 
 ---
 
-## 💡 AI 提示詞建議
+## 🛠️ 原有圖文魔術師功能（50+）
 
-1. 輸入簡短描述（如：柴犬 新年）
-2. 點擊「💡 建議」按鈕
-3. 選擇一個優化後的提示詞
+### 基本
+- 圖片上傳 / PDF 上傳
+- 相機拍照 / 剪貼簿貼上
+- 縮放 / 旋轉 / 裁切
+
+### 選取工具
+- 矩形選取 / 套索選取
+- 魔術棒 / 吸管取色
+
+### 調色
+- 亮度 / 對比 / 飽和度
+- 色階 / 曲線 / HSL
+- 色彩分析（提取主色）
+
+### 濾鏡
+- 黑白 / 復古 / 暖色 / 冷色
+- 戲劇 / 懷舊 / 負片
+
+### 繪圖
+- 畫筆 / 橡皮擦
+- 鋼筆工具
+
+### 文字
+- 多樣式文字
+- 直書 / 橫書
+
+### 修圖
+- 馬賽克
+- 浮水印（加 / 去）
+- 圖章 / 簽名
+- 邊框 / 貼圖
+
+### 變形
+- 翻轉 / 旋轉
+- 裁切
+
+### 創意
+- 縮圖製作
+- 封面製作
+- 產品 Mockup
+
+### AI 功能
+- AI 圖片分析（Gemini / Groq）
+- AI 生圖（6 模型）
+- AI 提示詞建議
+- AI 去背景（規劃中）
+
+### 輸出
+- PNG 下載
+- PDF 下載
+- LINE 分享
 
 ---
 
-## 🧠 Qwen-Image 中文用法
+## ⚙️ API KEY 設定
+
+到「設定」頁面填入以下 API KEY：
+
+| API | 用途 | 取得網址 |
+|-----|------|----------|
+| Ideogram | AI 生圖 | https://ideogram.ai/api |
+| Replicate | FLUX/Recraft/Z-Turbo | https://replicate.com/account/api-tokens |
+| Stability | SD 3.5 | https://platform.stability.ai/ |
+| Together | Qwen-Image 中文 | https://api.together.ai/settings/api-keys |
+| OpenAI | AI 提示詞建議 | https://platform.openai.com/api-keys |
+| Gemini | AI 圖片分析 | https://aistudio.google.com/ |
+| Groq | AI 圖片分析 | https://console.groq.com/ |
+| ImgBB | 圖片上傳分享 | https://api.imgbb.com/ |
+
+---
+
+## 🀄 文字疊加使用方法
+
+1. 上傳圖片
+2. 點擊 **AI → 🀄文字疊加**
+3. 輸入繁體中文文字
+4. 選擇 **橫書** 或 **直書**
+5. 選擇位置：
+   - **九宮格**：點擊按鈕快速定位
+   - **自由拖曳**：勾選後拖曳到任意位置
+6. 點擊「套用」
+
+---
+
+## 🧠 Qwen-Image 中文生圖技巧
 
 ```
 可愛柴犬，紅色招牌寫著"新年快樂"
@@ -67,31 +137,14 @@ fd.append('output_format', 'png');
 
 ---
 
-## ⚠️ 重要提醒
-
-1. **Together AI Key 需要重新申請**
-   - 錯誤訊息：`Invalid API key provided`
-   - 網址：https://api.together.ai/settings/api-keys
-
-2. **CORS 代理可能不穩定**
-   - 如果 Ideogram/Replicate 還是失敗
-   - 可能是 corsproxy.io 暫時不可用
-   - 建議稍後再試
-
-3. **設定備份**
-   - 設定完成後立即導出
-   - 避免休眠後遺失
-
----
-
 ## 部署
 
 ```bash
 git add index.html
-git commit -m "fix: 修復所有API的CORS問題 + 設定備份功能"
+git commit -m "feat: 繁中生圖工坊 Pro V3.0 - 整合AI生圖+圖文魔術師"
 git push origin main
 ```
 
 ---
 
-*v1.5 by Sone Wang*
+*V3.0 by Sone Wang*
