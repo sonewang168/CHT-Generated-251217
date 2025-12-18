@@ -2,32 +2,34 @@
 
 git add index.html
 
-git commit -m "fix: 重寫圖片載入 + 新增AI提示詞建議
+git commit -m "fix: 圖片載入優化 + 設定備份功能 + AI建議
 
-## 主要修復
+## 主要更新
 
-### 1. 圖片載入邏輯重寫
-- 先嘗試直接載入原始URL
-- 失敗則依序嘗試3個圖片代理：
-  1. wsrv.nl
-  2. images.weserv.nl  
-  3. imageproxy.pimg.tw
-- 每個方式8秒超時自動切換
-- 使用Image物件測試載入（無需CORS）
+### 1. 圖片載入優化
+- 移除 crossorigin 屬性（避免CORS檢查）
+- 設置 referrerPolicy='no-referrer'（避免防盜鏈）
+- 新增 tryLoadImage() 函數依序嘗試：
+  1. 原始URL直接載入
+  2. wsrv.nl 圖片代理
+  3. images.weserv.nl 圖片代理
+  4. imageproxy.pimg.tw 圖片代理
+- 每個方式10秒超時自動切換
 
-### 2. 新增 AI 提示詞建議功能
-- 點擊「💡 AI建議」按鈕
-- 輸入簡短描述，AI生成5個優化建議
+### 2. 設定備份功能（防止API KEY遺失）
+- 新增「📤 導出設定」按鈕
+- 新增「📥 導入設定」按鈕
+- 設定保存為JSON檔案，可永久保存
+- 休眠/清除資料後可快速還原
+
+### 3. AI 提示詞建議功能
+- 輸入簡短描述後點擊「💡 建議」
+- AI生成5個優化後的完整提示詞
 - 點擊建議即可套用
-- 使用 gpt-4o-mini 快速生成
 
-### 3. Qwen-Image 中文優化
-- 用雙引號包住要顯示的文字
-- 自動加入文字渲染提示
-- 強制 b64_json 格式（避免CORS）
-- 步數提高到30
-
-### 4. AI 解析可編輯
-- div → textarea"
+### 4. Qwen-Image 優化
+- 強制 response_format: b64_json
+- 自動加入中文文字渲染提示
+- 步數提高到30"
 
 git push origin main
