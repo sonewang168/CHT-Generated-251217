@@ -7651,7 +7651,7 @@
                         <small style="color:var(--text-secondary);font-size:10px;">33 字元，以 U 開頭。加入 Bot 後輸入「ID」可取得</small>
                     </div>
                     <div style="display:flex;gap:10px;margin-top:10px;">
-                        <button class="test-line-btn" onclick="testLineNotify()">🧪 測試 LINE 傳送</button>
+                        <button class="test-line-btn" onclick="testLineBot()">🧪 測試 LINE 傳送</button>
                     </div>
                 </div>
                 
@@ -7661,14 +7661,13 @@
                 </div>
                 
                 <div class="settings-section" style="margin-top:15px;">
-                    <div class="settings-title">📖 LINE Messaging API 設定教學</div>
+                    <div class="settings-title">📖 LINE Bot 設定教學</div>
                     <div style="font-size:11px;color:var(--text-secondary);line-height:1.8;">
-                        <p style="color:#f59e0b;margin-bottom:8px;">⚠️ LINE Notify 已於 2025/3/31 停止服務，請改用 Messaging API</p>
                         <p><b>Step 1：</b>前往 <a href="https://developers.line.biz/console/" target="_blank" style="color:var(--secondary);">LINE Developers Console</a></p>
                         <p><b>Step 2：</b>建立 Provider → 建立 Messaging API Channel</p>
                         <p><b>Step 3：</b>在 Channel 設定頁面取得 <b>Channel Access Token</b></p>
                         <p><b>Step 4：</b>前往 <a href="https://script.google.com/" target="_blank" style="color:var(--secondary);">Google Apps Script</a> 新建專案</p>
-                        <p><b>Step 5：</b>貼上 gas-line-messaging.js 程式碼，填入 Token</p>
+                        <p><b>Step 5：</b>貼上 GAS 程式碼，填入 Token</p>
                         <p><b>Step 6：</b>部署 → 新增部署 → 網頁應用程式</p>
                         <p><b>Step 7：</b>執行身分選「我」，存取權選「所有人」</p>
                         <p><b>Step 8：</b>把部署網址貼到上面的欄位</p>
@@ -18226,7 +18225,11 @@
         
         // ===== LINE 分享 =====
         async function sendToLine() {
-            if (!settings.gasUrl) {
+            // 直接從輸入框讀取最新值（和測試函數一致）
+            const gasUrl = document.getElementById('gasUrl')?.value.trim() || settings.gasUrl;
+            const lineUserId = document.getElementById('lineUserId')?.value.trim() || settings.lineUserId;
+            
+            if (!gasUrl) {
                 showToast('⚠️ 請先到設定頁填寫 GAS URL');
                 showPage('settings');
                 return;
@@ -18250,11 +18253,11 @@
                     image: imageData
                 };
                 
-                if (settings.lineUserId) {
-                    payload.userId = settings.lineUserId;
+                if (lineUserId) {
+                    payload.userId = lineUserId;
                 }
                 
-                await fetch(settings.gasUrl, {
+                await fetch(gasUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
@@ -18357,7 +18360,7 @@
             }
         }
         
-        async function testLineNotify() {
+        async function testLineBot() {
             // 先取得當前輸入值
             const gasUrl = document.getElementById('gasUrl').value.trim();
             const lineUserId = document.getElementById('lineUserId').value.trim();
