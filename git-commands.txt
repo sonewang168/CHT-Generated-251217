@@ -1,0 +1,28 @@
+# Git 部署指令
+
+git add index.html
+
+git commit -m "fix: 修復圖片載入 + AI解析可編輯 + Qwen用雙引號
+
+## 修復內容
+
+### 1. 圖片載入失敗（全面重寫）
+- 新增 4 種載入方式依序嘗試：
+  1. 直接載入（crossOrigin）
+  2. wsrv.nl 圖片代理
+  3. images.weserv.nl 圖片代理  
+  4. corsproxy.io fetch代理
+- 每種方式 25 秒超時
+- 使用專業圖片代理服務（更穩定）
+
+### 2. AI 解析結果可編輯
+- div → textarea
+- 可在使用前編輯內容
+
+### 3. Qwen-Image 改用雙引號
+- 手機友好：用 \"文字\" 而非「文字」
+- 自動加入中文優化後綴
+- 強制請求 b64_json 格式避免 CORS
+- 提高生成步數 20→28"
+
+git push origin main
