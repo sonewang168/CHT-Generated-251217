@@ -18607,48 +18607,48 @@
             const currentPos = getCurrentGenTextPosition();
             console.log('📍 buildFinalPrompt - 位置:', currentPos, '方向:', textDir);
             
-            // 位置對應的描述（中文）
+            // 位置對應的描述（繁體中文）
             const positionMapCN = {
-                'top-left': '左上角',
-                'top-center': '頂部中央',
-                'top-right': '右上角',
-                'middle-left': '左側中間',
-                'middle-center': '正中央',
-                'middle-right': '右側中間',
-                'bottom-left': '左下角',
-                'bottom-center': '底部中央',
-                'bottom-right': '右下角'
+                'top-left': { area: '左上角', detail: '靠左上' },
+                'top-center': { area: '頂部中央', detail: '靠上方' },
+                'top-right': { area: '右上角', detail: '靠右上' },
+                'middle-left': { area: '左側', detail: '靠左邊' },
+                'middle-center': { area: '正中央', detail: '畫面中心' },
+                'middle-right': { area: '右側', detail: '靠右邊' },
+                'bottom-left': { area: '左下角', detail: '靠左下' },
+                'bottom-center': { area: '底部中央', detail: '靠下方' },
+                'bottom-right': { area: '右下角', detail: '靠右下' }
             };
             
-            const posDesc = positionMapCN[currentPos] || '正中央';
-            const dirDesc = isVertical ? '直書（從上到下排列）' : '橫書（從左到右排列）';
+            const posInfo = positionMapCN[currentPos] || positionMapCN['middle-center'];
+            const dirDesc = isVertical ? '直書' : '橫書';
             
             // 組合提示詞
             const model = document.getElementById('genModel').value;
             let textPrompt = '';
             
             if(model === 'qwen-image') {
-                // Qwen-Image 用雙引號包住文字，強調位置和方向
-                textPrompt = `，畫面${posDesc}位置有一個清晰的文字標誌，以${dirDesc}方式顯示"${textContent}"，文字清晰可讀，高解析度文字渲染，正確的繁體中文字形`;
+                // Qwen-Image 繁體中文，強調位置
+                textPrompt = `，在畫面${posInfo.area}（${posInfo.detail}）顯示${dirDesc}文字"${textContent}"，文字清晰可讀，只出現在${posInfo.area}`;
             } else if(model === 'ideogram') {
-                // Ideogram 英文提示詞
+                // Ideogram 英文提示詞 - 更強調位置
                 const posMapEn = {
-                    'top-left': 'top-left corner',
-                    'top-center': 'top center',
-                    'top-right': 'top-right corner',
-                    'middle-left': 'left side',
-                    'middle-center': 'center',
-                    'middle-right': 'right side',
-                    'bottom-left': 'bottom-left corner',
-                    'bottom-center': 'bottom center',
-                    'bottom-right': 'bottom-right corner'
+                    'top-left': { pos: 'top-left corner', anchor: 'upper left area, near the left and top edges' },
+                    'top-center': { pos: 'top center', anchor: 'upper middle area, horizontally centered at the top' },
+                    'top-right': { pos: 'top-right corner', anchor: 'upper right area, near the right and top edges' },
+                    'middle-left': { pos: 'left side center', anchor: 'left middle area, vertically centered on the left' },
+                    'middle-center': { pos: 'exact center', anchor: 'dead center of the image' },
+                    'middle-right': { pos: 'right side center', anchor: 'right middle area, vertically centered on the right' },
+                    'bottom-left': { pos: 'bottom-left corner', anchor: 'lower left area, near the left and bottom edges' },
+                    'bottom-center': { pos: 'bottom center', anchor: 'lower middle area, horizontally centered at the bottom' },
+                    'bottom-right': { pos: 'bottom-right corner', anchor: 'lower right area, near the right and bottom edges' }
                 };
-                const posEn = posMapEn[currentPos] || 'center';
-                const dirEn = isVertical ? 'vertical text (top to bottom)' : 'horizontal text (left to right)';
-                textPrompt = `, with clear ${dirEn} saying "${textContent}" displayed at the ${posEn} of the image, sharp readable text`;
+                const posEn = posMapEn[currentPos] || posMapEn['middle-center'];
+                const dirEn = isVertical ? 'vertical text reading top to bottom' : 'horizontal text reading left to right';
+                textPrompt = `. IMPORTANT: Place clear, readable ${dirEn} "${textContent}" precisely at the ${posEn.pos} of the image (${posEn.anchor}). The text must be sharp, legible, and positioned only at the ${posEn.pos}, nowhere else`;
             } else {
-                // 其他模型
-                textPrompt = `，在畫面${posDesc}位置以${dirDesc}方式清晰顯示文字"${textContent}"`;
+                // 其他模型 - 繁體中文
+                textPrompt = `，在畫面${posInfo.area}（${posInfo.detail}）顯示${dirDesc}文字"${textContent}"，文字清晰可讀，只出現在${posInfo.area}`;
             }
             
             return basePrompt + textPrompt;
