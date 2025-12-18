@@ -18228,6 +18228,7 @@
             // 直接從輸入框讀取最新值（和測試函數一致）
             const gasUrl = document.getElementById('gasUrl')?.value.trim() || settings.gasUrl;
             const lineUserId = document.getElementById('lineUserId')?.value.trim() || settings.lineUserId;
+            const imgbbKey = document.getElementById('imgbbKey')?.value.trim() || settings.imgbbKey;
             
             if (!gasUrl) {
                 showToast('⚠️ 請先到設定頁填寫 GAS URL');
@@ -18235,22 +18236,51 @@
                 return;
             }
             
-            showToast('💬 傳送中...');
+            if (!imgbbKey) {
+                showToast('⚠️ 請先到設定頁填寫 ImgBB Key');
+                showPage('settings');
+                return;
+            }
+            
+            showToast('📤 上傳圖片中...');
             
             try {
                 // 嘗試取得圖片資料（可能因跨域而失敗）
                 let imageData;
                 try {
-                    imageData = canvas.toDataURL('image/jpeg', 0.85); // 使用 JPEG 減少檔案大小
+                    imageData = canvas.toDataURL('image/jpeg', 0.85);
                 } catch (canvasError) {
                     showToast('❌ 無法取得圖片（可能含有跨域內容）');
                     console.error('Canvas toDataURL 錯誤:', canvasError);
                     return;
                 }
                 
+                // 先上傳到 ImgBB 取得 URL
+                const base64 = imageData.split(',')[1];
+                const formData = new FormData();
+                formData.append('key', imgbbKey);
+                formData.append('image', base64);
+                
+                const uploadRes = await fetch('https://api.imgbb.com/1/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const uploadData = await uploadRes.json();
+                if (!uploadData.success) {
+                    showToast('❌ 圖片上傳失敗');
+                    console.error('ImgBB 上傳失敗:', uploadData);
+                    return;
+                }
+                
+                const imageUrl = uploadData.data.url;
+                showToast('💬 傳送到 LINE...');
+                
+                // 發送給 GAS（使用 imageUrl 欄位）
                 const payload = {
                     action: 'sendImage',
-                    image: imageData
+                    imageUrl: imageUrl,
+                    prompt: '繁中生圖工坊'
                 };
                 
                 if (lineUserId) {
@@ -18258,7 +18288,6 @@
                 }
                 
                 // 使用 text/plain 以確保 no-cors 模式下正確發送
-                // GAS 端需用 JSON.parse(e.postData.contents) 解析
                 await fetch(gasUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
