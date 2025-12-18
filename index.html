@@ -18241,28 +18241,18 @@
                 // 嘗試取得圖片資料
                 try {
                     imageData = canvas.toDataURL('image/png');
+                    console.log('✅ Canvas 導出成功，大小:', Math.round(imageData.length/1024), 'KB');
                 } catch (canvasError) {
-                    console.warn('Canvas toDataURL 錯誤，嘗試重新載入圖片...', canvasError);
-                    
-                    // 嘗試透過創建新 canvas 來解決
-                    try {
-                        const tempCanvas = document.createElement('canvas');
-                        tempCanvas.width = canvas.width;
-                        tempCanvas.height = canvas.height;
-                        const tempCtx = tempCanvas.getContext('2d');
-                        
-                        // 先填充白色背景
-                        tempCtx.fillStyle = '#ffffff';
-                        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                        
-                        // 嘗試從原始 canvas 複製
-                        tempCtx.drawImage(canvas, 0, 0);
-                        imageData = tempCanvas.toDataURL('image/png');
-                    } catch (e2) {
-                        showToast('❌ 無法取得圖片（跨域限制）\n請重新上傳圖片或使用「下載」後再分享');
-                        console.error('Canvas 跨域錯誤:', e2);
-                        return;
-                    }
+                    console.error('❌ Canvas 導出失敗 (跨域污染):', canvasError);
+                    showToast('❌ 圖片無法導出（跨域限制）\n請點擊「使用此圖」重新載入');
+                    return;
+                }
+                
+                // 檢查圖片大小，必要時壓縮
+                if(imageData.length > 5 * 1024 * 1024) {
+                    console.log('圖片過大，壓縮中...');
+                    imageData = canvas.toDataURL('image/jpeg', 0.85);
+                    console.log('壓縮後大小:', Math.round(imageData.length/1024), 'KB');
                 }
                 
                 const payload = {
@@ -18274,7 +18264,9 @@
                     payload.userId = settings.lineUserId;
                 }
                 
-                const response = await fetch(settings.gasUrl, {
+                console.log('📤 傳送到:', settings.gasUrl.substring(0, 50) + '...');
+                
+                await fetch(settings.gasUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
@@ -18283,8 +18275,8 @@
                 
                 showToast('✅ 已傳送到 LINE！');
             } catch (e) {
-                showToast('❌ 傳送失敗: ' + e.message);
                 console.error('LINE 傳送錯誤:', e);
+                showToast('❌ 傳送失敗: ' + e.message);
             }
         }
         
@@ -18841,49 +18833,76 @@
         function useGeneratedImage() {
             if(!generatedImageUrl){showToast('⚠️ 沒有生成的圖片');return;}
             
-            // 如果是 Base64，直接載入
+            showToast('🔄 載入圖片中...');
+            
+            // 如果是 Base64，直接載入（不會污染 canvas）
             if(generatedImageUrl.startsWith('data:')) {
                 const img = new Image();
                 img.onload = function() {
                     canvas.width = img.naturalWidth;
                     canvas.height = img.naturalHeight;
                     ctx.drawImage(img, 0, 0);
+                    saveState(); // 保存歷史
                     showEditor();
                     document.getElementById('aiGenPanel').classList.remove('show');
-                    showToast('✅ 圖片已載入編輯器');
+                    showToast('✅ 圖片已載入，可編輯並分享到 LINE');
                 };
+                img.onerror = ()=>showToast('❌ 圖片載入失敗');
                 img.src = generatedImageUrl;
                 return;
             }
             
-            // 如果是 URL，使用代理載入以避免 CORS 問題
-            showToast('🔄 載入圖片中...');
-            const proxyUrl = 'https://wsrv.nl/?url='+encodeURIComponent(generatedImageUrl)+'&output=png';
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = function() {
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                ctx.drawImage(img, 0, 0);
-                showEditor();
-                document.getElementById('aiGenPanel').classList.remove('show');
-                showToast('✅ 圖片已載入編輯器');
-            };
-            img.onerror = function() {
-                // 嘗試直接載入（可能無法分享）
-                const img2 = new Image();
-                img2.onload = function() {
-                    canvas.width = img2.naturalWidth;
-                    canvas.height = img2.naturalHeight;
-                    ctx.drawImage(img2, 0, 0);
-                    showEditor();
-                    document.getElementById('aiGenPanel').classList.remove('show');
-                    showToast('⚠️ 圖片已載入，但可能無法分享到 LINE');
-                };
-                img2.onerror = ()=>showToast('❌ 圖片載入失敗');
-                img2.src = generatedImageUrl;
-            };
-            img.src = proxyUrl;
+            // 如果是 URL，必須先轉換為 Base64 才能避免污染 canvas
+            convertUrlToBase64(generatedImageUrl)
+                .then(base64 => {
+                    const img = new Image();
+                    img.onload = function() {
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        ctx.drawImage(img, 0, 0);
+                        saveState(); // 保存歷史
+                        showEditor();
+                        document.getElementById('aiGenPanel').classList.remove('show');
+                        showToast('✅ 圖片已載入，可編輯並分享到 LINE');
+                    };
+                    img.onerror = ()=>showToast('❌ 圖片載入失敗');
+                    img.src = base64;
+                })
+                .catch(err => {
+                    console.error('圖片轉換失敗:', err);
+                    showToast('❌ 圖片載入失敗，請重新生成');
+                });
+        }
+        
+        // 將 URL 圖片轉換為 Base64（避免 canvas 污染）
+        async function convertUrlToBase64(url) {
+            // 使用代理避免 CORS
+            const proxyUrl = 'https://wsrv.nl/?url=' + encodeURIComponent(url) + '&output=png';
+            
+            try {
+                const response = await fetch(proxyUrl);
+                if(!response.ok) throw new Error('Fetch failed');
+                const blob = await response.blob();
+                
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch(e) {
+                console.warn('代理轉換失敗，嘗試直接 fetch:', e);
+                // 嘗試直接 fetch（某些圖片可能支援 CORS）
+                const response = await fetch(url);
+                const blob = await response.blob();
+                
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            }
         }
         
         function downloadGenImage() {
