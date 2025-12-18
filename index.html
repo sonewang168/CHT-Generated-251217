@@ -18842,12 +18842,15 @@
                     canvas.width = img.naturalWidth;
                     canvas.height = img.naturalHeight;
                     ctx.drawImage(img, 0, 0);
-                    saveState(); // 保存歷史
+                    saveHistory();
                     showEditor();
                     document.getElementById('aiGenPanel').classList.remove('show');
                     showToast('✅ 圖片已載入，可編輯並分享到 LINE');
                 };
-                img.onerror = ()=>showToast('❌ 圖片載入失敗');
+                img.onerror = function() {
+                    console.error('Base64 圖片載入失敗');
+                    showToast('❌ 圖片載入失敗');
+                };
                 img.src = generatedImageUrl;
                 return;
             }
@@ -18860,18 +18863,22 @@
                         canvas.width = img.naturalWidth;
                         canvas.height = img.naturalHeight;
                         ctx.drawImage(img, 0, 0);
-                        saveState(); // 保存歷史
+                        saveHistory();
                         showEditor();
                         document.getElementById('aiGenPanel').classList.remove('show');
                         showToast('✅ 圖片已載入，可編輯並分享到 LINE');
                     };
-                    img.onerror = ()=>showToast('❌ 圖片載入失敗');
+                    img.onerror = function() {
+                        console.error('轉換後圖片載入失敗');
+                        showToast('❌ 圖片載入失敗');
+                    };
                     img.src = base64;
                 })
                 .catch(err => {
                     console.error('圖片轉換失敗:', err);
                     showToast('❌ 圖片載入失敗，請重新生成');
                 });
+        }
         }
         
         // 將 URL 圖片轉換為 Base64（避免 canvas 污染）
