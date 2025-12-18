@@ -18241,7 +18241,7 @@
                 // 嘗試取得圖片資料（可能因跨域而失敗）
                 let imageData;
                 try {
-                    imageData = canvas.toDataURL('image/png');
+                    imageData = canvas.toDataURL('image/jpeg', 0.85); // 使用 JPEG 減少檔案大小
                 } catch (canvasError) {
                     showToast('❌ 無法取得圖片（可能含有跨域內容）');
                     console.error('Canvas toDataURL 錯誤:', canvasError);
@@ -18257,9 +18257,11 @@
                     payload.userId = lineUserId;
                 }
                 
+                // 使用 text/plain 以確保 no-cors 模式下正確發送
+                // GAS 端需用 JSON.parse(e.postData.contents) 解析
                 await fetch(gasUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
                     body: JSON.stringify(payload),
                     mode: 'no-cors'
                 });
@@ -18378,9 +18380,10 @@
                     payload.userId = lineUserId;
                 }
                 
+                // 使用 text/plain 以確保 no-cors 模式下正確發送
                 const response = await fetch(gasUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
                     body: JSON.stringify(payload),
                     mode: 'no-cors'
                 });
